@@ -366,7 +366,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 ### Development Setup
 
 ```bash
-git clone https://github.com/your-org/schematic-api.git
+git clone https://github.com/MrPorky/schematic-api.git
 cd schematic-api
 pnpm install
 pnpm test
@@ -374,4 +374,4 @@ pnpm test
 
 ## License
 
-MIT © [Your Name](https://github.com/your-org)
+MIT © [MrPorky](https://github.com/MrPorky)
