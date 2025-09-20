@@ -1,6 +1,6 @@
-# APIForge
+# SchematicAPI
 
-[![npm version](https://badge.fury.io/js/api-forge.svg)](https://badge.fury.io/js/api-forge)
+[![npm version](https://badge.fury.io/js/schematic-api.svg)](https://badge.fury.io/js/schematic-api)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -8,7 +8,7 @@ A TypeScript library that lets you define your API schema once and get both a ty
 
 ## Table of Contents
 
-- [Why APIForge?](#why-apiforge)
+- [Why SchematicAPI?](#why-schematicapi)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Project Structure](#project-structure)
@@ -18,7 +18,7 @@ A TypeScript library that lets you define your API schema once and get both a ty
 - [Contributing](#contributing)
 - [License](#license)
 
-## Why APIForge?
+## Why SchematicAPI?
 
 - **Single Source of Truth**: Define your API schema once using Zod
 - **Type-Safe Client**: Get a fully typed API client for your frontend
@@ -29,9 +29,9 @@ A TypeScript library that lets you define your API schema once and get both a ty
 ## Installation
 
 ```bash
-npm install api-forge zod hono
+npm install schematic-api zod hono
 # or
-pnpm add api-forge zod hono
+pnpm add schematic-api zod hono
 ```
 
 ## Quick Start
@@ -57,7 +57,7 @@ export type User = z.infer<typeof userSchema>
 
 ```ts
 // src/api/schemas/users.ts
-import { defineApiSchema } from 'api-forge'
+import { defineApiSchema } from 'schematic-api'
 import { userSchema } from '../../models/user'
 
 export const usersSchema = defineApiSchema({
@@ -97,7 +97,7 @@ export const usersSchema = defineApiSchema({
 
 ```ts
 // src/api/schemas/index.ts
-import { defineApiSchema } from 'api-forge'
+import { defineApiSchema } from 'schematic-api'
 import { usersSchema } from './users'
 
 export const apiSchema = defineApiSchema({
@@ -110,7 +110,7 @@ export const apiSchema = defineApiSchema({
 
 ```ts
 // src/api/client.ts
-import { createApiClient } from 'api-forge'
+import { createApiClient } from 'schematic-api'
 import { apiSchema } from './schemas'
 
 export const apiClient = createApiClient({
@@ -165,7 +165,7 @@ useEffect(() => {
 
 ```ts
 // mock-server/index.ts
-import { defineMockServerSchema, generateMockApi } from 'api-forge'
+import { defineMockServerSchema, generateMockApi } from 'schematic-api'
 import { zocker } from 'zocker'
 import { apiSchema } from '../src/api/schemas'
 
@@ -250,7 +250,7 @@ mock-server/
 
 ## API Schema Format
 
-APIForge uses a simple convention for defining endpoints:
+SchematicAPI uses a simple convention for defining endpoints:
 
 - `@{method}/{path}` - Define HTTP method and path
 - `input` - Define request validation (query, params, json, form)
@@ -359,15 +359,6 @@ apiClient.interceptors.response.addInterceptor((config, response) => {
 })
 ```
 
-## Examples
-
-Check out our [examples repository](https://github.com/your-org/api-forge-examples) for complete project setups with:
-
-- React + Vite + TanStack Query
-- Next.js App Router
-- Vue 3 + Pinia
-- Svelte + SvelteKit
-
 ## Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
@@ -375,8 +366,8 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 ### Development Setup
 
 ```bash
-git clone https://github.com/your-org/api-forge.git
-cd api-forge
+git clone https://github.com/your-org/schematic-api.git
+cd schematic-api
 pnpm install
 pnpm test
 ```

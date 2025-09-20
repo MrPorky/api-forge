@@ -2,7 +2,7 @@
 
 ## Overview
 
-APIForge is a TypeScript library that provides a unified approach to API development by allowing developers to define their API contract once using Zod schemas and automatically generating both a type-safe client and a mock server. The library follows a schema-first approach where the API definition serves as the single source of truth for both client and server implementations.
+SchematicAPI is a TypeScript library that provides a unified approach to API development by allowing developers to define their API contract once using Zod schemas and automatically generating both a type-safe client and a mock server. The library follows a schema-first approach where the API definition serves as the single source of truth for both client and server implementations.
 
 The core architecture consists of three main components:
 

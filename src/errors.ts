@@ -8,7 +8,7 @@ import type { z } from 'zod'
  *
  * @example
  * ```typescript
- * import { MockError } from 'api-forge'
+ * import { MockError } from 'schematic-api'
  *
  * const mockSchema = defineMockServerSchema(apiSchema, {
  *   '@get/users/:id': ({ inputs }) => {
@@ -61,7 +61,7 @@ export class MockError extends Error {
  *
  * @example
  * ```typescript
- * import { createApiClient, isApiError } from 'api-forge'
+ * import { createApiClient, isApiError } from 'schematic-api'
  *
  * const client = createApiClient({ apiSchema, baseURL: 'https://api.example.com' })
  *
@@ -139,7 +139,7 @@ export class ApiError extends Error {
  *
  * @example
  * ```typescript
- * import { createApiClient, isValidationError } from 'api-forge'
+ * import { createApiClient, isValidationError } from 'schematic-api'
  *
  * const client = createApiClient({ apiSchema, baseURL: 'https://api.example.com' })
  *
@@ -280,7 +280,7 @@ export class ValidationError extends ApiError {
  *
  * @example
  * ```typescript
- * import { createApiClient, isNetworkError } from 'api-forge'
+ * import { createApiClient, isNetworkError } from 'schematic-api'
  *
  * const client = createApiClient({
  *   apiSchema,
@@ -356,7 +356,7 @@ export class NetworkError extends Error {
  *
  * @example
  * ```typescript
- * import { isMockError } from 'api-forge'
+ * import { isMockError } from 'schematic-api'
  *
  * try {
  *   // Mock server operation
@@ -381,7 +381,7 @@ export function isMockError(error: unknown): error is MockError {
  *
  * @example
  * ```typescript
- * import { isApiError } from 'api-forge'
+ * import { isApiError } from 'schematic-api'
  *
  * try {
  *   const result = await client('@get/users/:id', { param: { id: '123' } })
@@ -415,7 +415,7 @@ export function isApiError(error: unknown): error is ApiError {
  *
  * @example
  * ```typescript
- * import { isValidationError } from 'api-forge'
+ * import { isValidationError } from 'schematic-api'
  *
  * try {
  *   const user = await client('@post/users', { json: formData })
@@ -449,7 +449,7 @@ export function isValidationError(error: unknown): error is ValidationError {
  *
  * @example
  * ```typescript
- * import { isNetworkError } from 'api-forge'
+ * import { isNetworkError } from 'schematic-api'
  *
  * try {
  *   const data = await client('@get/data')

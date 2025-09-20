@@ -64,7 +64,7 @@ export type InputsWithParam<T extends Endpoint['input'], K extends string>
  * @example
  * ```typescript
  * import { z } from 'zod'
- * import { defineApiSchema, defineMockServerSchema } from 'api-forge'
+ * import { defineApiSchema, defineMockServerSchema } from 'schematic-api'
  *
  * const apiSchema = defineApiSchema({
  *   '@get/users/:id': {
@@ -114,7 +114,7 @@ export function defineMockServerSchema<T extends ApiSchema, F extends Faker<T>>(
  * @example
  * ```typescript
  * import { z } from 'zod'
- * import { defineApiSchema } from 'api-forge'
+ * import { defineApiSchema } from 'schematic-api'
  *
  * const apiSchema = defineApiSchema({
  *   // GET endpoint with path parameter
@@ -182,7 +182,7 @@ export function defineApiSchema<T extends ApiSchema>(schema: { [K in keyof T & `
  * @example
  * ```typescript
  * import { z } from 'zod'
- * import { defineApiSchema, defineApiMock, defineMockServerSchema } from 'api-forge'
+ * import { defineApiSchema, defineApiMock, defineMockServerSchema } from 'schematic-api'
  *
  * const apiSchema = defineApiSchema({
  *   '@get/users/:id': {
