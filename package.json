@@ -5,7 +5,20 @@
   "description": "A TypeScript library for generating type-safe API clients and mock servers from Zod schemas",
   "author": "",
   "license": "MIT",
-  "keywords": [],
+  "homepage": "https://github.com/MrPorky/mock-dash",
+  "bugs": "https://github.com/MrPorky/mock-dash/issues",
+  "keywords": [
+    "typescript",
+    "zod",
+    "api",
+    "client",
+    "mock",
+    "server",
+    "type-safe",
+    "schema",
+    "validation",
+    "hono"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
