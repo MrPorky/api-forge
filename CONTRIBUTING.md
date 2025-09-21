@@ -6,7 +6,7 @@ Thank you for your interest in contributing to MockDash! This guide will help yo
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - pnpm (preferred package manager)
 
 ### Setup
