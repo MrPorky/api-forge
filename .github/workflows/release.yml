@@ -3,10 +3,8 @@ name: Release
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - '**.md'
-      - '.github/**'
-      - '!.github/workflows/release.yml'
+    paths:
+      - package.json
 
 jobs:
   release:
@@ -32,22 +30,36 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Get package version
+        id: package-version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Check if tag exists
+        id: tag-exists
+        run: |
+          if git rev-parse "v${{ steps.package-version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run tests
+        if: steps.tag-exists.outputs.exists == 'false'
         run: pnpm run test:run
 
       - name: Run linting
+        if: steps.tag-exists.outputs.exists == 'false'
         run: pnpm run lint
 
       - name: Build package
+        if: steps.tag-exists.outputs.exists == 'false'
         run: pnpm run build
 
       - name: Create Release
-        id: release
-        uses: actions/create-release@v1
+        if: steps.tag-exists.outputs.exists == 'false'
+        run: |
+          gh release create "v${{ steps.package-version.outputs.version }}" \
+            --title "Release v${{ steps.package-version.outputs.version }}" \
+            --generate-notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ github.run_number }}
-          release_name: Release v${{ github.run_number }}
-          draft: false
-          prerelease: false
