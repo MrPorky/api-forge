@@ -60,6 +60,7 @@ jobs:
         run: |
           gh release create "v${{ steps.package-version.outputs.version }}" \
             --title "Release v${{ steps.package-version.outputs.version }}" \
-            --generate-notes
+            --generate-notes \
+            --draft
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
