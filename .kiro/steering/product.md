@@ -1,6 +1,6 @@
 # Product Overview
 
-SchematicAPI is a TypeScript library that enables developers to define API schemas once using Zod and automatically generate both:
+MockDash is a TypeScript library that enables developers to define API schemas once using Zod and automatically generate both:
 
 1. **Type-safe API client** - Fully typed client for frontend applications with request/response validation
 2. **Mock server** - Hono-based development server with automatic fake data generation

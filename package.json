@@ -1,8 +1,8 @@
 {
-  "name": "schematic-api",
+  "name": "mock-dash",
   "type": "module",
-  "version": "1.0.0",
-  "description": "A TypeScript library",
+  "version": "0.0.1",
+  "description": "A TypeScript library for generating type-safe API clients and mock servers from Zod schemas",
   "author": "",
   "license": "MIT",
   "keywords": [],
@@ -27,10 +27,12 @@
     "lint": "eslint",
     "lint:fix": "eslint . --fix"
   },
+  "peerDependencies": {
+    "zod": "^4.0.0"
+  },
   "dependencies": {
     "@hono/zod-validator": "^0.7.3",
-    "hono": "^4.9.8",
-    "zod": "^4.1.9"
+    "hono": "^4.9.8"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^5.3.0",
@@ -42,6 +44,7 @@
     "typescript": "^5.9.2",
     "vitest": "^3.2.4",
     "zocker": "^3.0.0",
+    "zod": "^4.1.9",
     "zod-schema-faker": "2.0.0-beta.6"
   }
 }

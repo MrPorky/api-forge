@@ -1,6 +1,6 @@
-# Contributing to SchematicAPI
+# Contributing to MockDash
 
-Thank you for your interest in contributing to SchematicAPI! This guide will help you get started with development and understand our contribution process.
+Thank you for your interest in contributing to MockDash! This guide will help you get started with development and understand our contribution process.
 
 ## Getting Started
 
@@ -150,4 +150,4 @@ The project uses semantic versioning:
 - Focus on constructive feedback
 - Help maintain a welcoming environment for all contributors
 
-Thank you for contributing to SchematicAPI! 🚀
+Thank you for contributing to MockDash! 🚀

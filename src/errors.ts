@@ -8,7 +8,7 @@ import type { z } from 'zod'
  *
  * @example
  * ```typescript
- * import { MockError } from 'schematic-api'
+ * import { MockError } from 'mock-dash'
  *
  * const mockSchema = defineMockServerSchema(apiSchema, {
  *   '@get/users/:id': ({ inputs }) => {
@@ -61,7 +61,7 @@ export class MockError extends Error {
  *
  * @example
  * ```typescript
- * import { createApiClient, isApiError } from 'schematic-api'
+ * import { createApiClient, isApiError } from 'mock-dash'
  *
  * const client = createApiClient({ apiSchema, baseURL: 'https://api.example.com' })
  *
@@ -139,7 +139,7 @@ export class ApiError extends Error {
  *
  * @example
  * ```typescript
- * import { createApiClient, isValidationError } from 'schematic-api'
+ * import { createApiClient, isValidationError } from 'mock-dash'
  *
  * const client = createApiClient({ apiSchema, baseURL: 'https://api.example.com' })
  *
@@ -280,7 +280,7 @@ export class ValidationError extends ApiError {
  *
  * @example
  * ```typescript
- * import { createApiClient, isNetworkError } from 'schematic-api'
+ * import { createApiClient, isNetworkError } from 'mock-dash'
  *
  * const client = createApiClient({
  *   apiSchema,
@@ -356,7 +356,7 @@ export class NetworkError extends Error {
  *
  * @example
  * ```typescript
- * import { isMockError } from 'schematic-api'
+ * import { isMockError } from 'mock-dash'
  *
  * try {
  *   // Mock server operation
@@ -381,7 +381,7 @@ export function isMockError(error: unknown): error is MockError {
  *
  * @example
  * ```typescript
- * import { isApiError } from 'schematic-api'
+ * import { isApiError } from 'mock-dash'
  *
  * try {
  *   const result = await client('@get/users/:id', { param: { id: '123' } })
@@ -415,7 +415,7 @@ export function isApiError(error: unknown): error is ApiError {
  *
  * @example
  * ```typescript
- * import { isValidationError } from 'schematic-api'
+ * import { isValidationError } from 'mock-dash'
  *
  * try {
  *   const user = await client('@post/users', { json: formData })
@@ -449,7 +449,7 @@ export function isValidationError(error: unknown): error is ValidationError {
  *
  * @example
  * ```typescript
- * import { isNetworkError } from 'schematic-api'
+ * import { isNetworkError } from 'mock-dash'
  *
  * try {
  *   const data = await client('@get/data')

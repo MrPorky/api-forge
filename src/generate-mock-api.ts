@@ -44,7 +44,7 @@ export interface MockContext extends Map<string, unknown> {
  * import { Hono } from 'hono'
  * import { cors } from 'hono/cors'
  * import { logger } from 'hono/logger'
- * import { generateMockApi, defineMockServerSchema } from 'schematic-api'
+ * import { generateMockApi, defineMockServerSchema } from 'mock-dash'
  * import { generateMock } from '@anatine/zod-mock'
  *
  * const apiSchema = defineMockServerSchema({

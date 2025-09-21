@@ -45,7 +45,7 @@ import { buildFormData, serializeQueryParams } from './request-utils'
  * @example
  * ```typescript
  * import { z } from 'zod'
- * import { defineApiSchema, createApiClient } from 'schematic-api'
+ * import { defineApiSchema, createApiClient } from 'mock-dash'
  *
  * const apiSchema = defineApiSchema({
  *   '@get/users/:id': {

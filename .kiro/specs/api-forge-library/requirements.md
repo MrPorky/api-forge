@@ -2,7 +2,7 @@
 
 ## Introduction
 
-SchematicAPI is a TypeScript library that enables developers to define their API contract once using Zod schemas and automatically generate both a type-safe API client for frontend applications and a functional mock server for development. The library aims to provide a single source of truth for API definitions while supporting modern development workflows with full type safety, automatic validation, and seamless integration with popular frontend frameworks.
+MockDash is a TypeScript library that enables developers to define their API contract once using Zod schemas and automatically generate both a type-safe API client for frontend applications and a functional mock server for development. The library aims to provide a single source of truth for API definitions while supporting modern development workflows with full type safety, automatic validation, and seamless integration with popular frontend frameworks.
 
 ## Requirements
 

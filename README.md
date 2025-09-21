@@ -1,6 +1,6 @@
-# SchematicAPI
+# MockDash
 
-[![npm version](https://badge.fury.io/js/schematic-api.svg)](https://badge.fury.io/js/schematic-api)
+[![npm version](https://badge.fury.io/js/mock-dash.svg)](https://badge.fury.io/js/mock-dash)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -8,7 +8,7 @@ A TypeScript library that lets you define your API schema once and get both a ty
 
 ## Table of Contents
 
-- [Why SchematicAPI?](#why-schematicapi)
+- [Why MockDash?](#why-mockdash)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Project Structure](#project-structure)
@@ -18,7 +18,7 @@ A TypeScript library that lets you define your API schema once and get both a ty
 - [Contributing](#contributing)
 - [License](#license)
 
-## Why SchematicAPI?
+## Why MockDash?
 
 - **Single Source of Truth**: Define your API schema once using Zod
 - **Type-Safe Client**: Get a fully typed API client for your frontend
@@ -29,9 +29,11 @@ A TypeScript library that lets you define your API schema once and get both a ty
 ## Installation
 
 ```bash
-npm install schematic-api zod hono
+npm install mock-dash zod
+npm install --save-dev hono
 # or
-pnpm add schematic-api zod hono
+pnpm add mock-dash zod
+pnpm add -D hono
 ```
 
 ## Quick Start
@@ -57,7 +59,7 @@ export type User = z.infer<typeof userSchema>
 
 ```ts
 // src/api/schemas/users.ts
-import { defineApiSchema } from 'schematic-api'
+import { defineApiSchema } from 'mock-dash'
 import { userSchema } from '../../models/user'
 
 export const usersSchema = defineApiSchema({
@@ -97,7 +99,7 @@ export const usersSchema = defineApiSchema({
 
 ```ts
 // src/api/schemas/index.ts
-import { defineApiSchema } from 'schematic-api'
+import { defineApiSchema } from 'mock-dash'
 import { usersSchema } from './users'
 
 export const apiSchema = defineApiSchema({
@@ -110,7 +112,7 @@ export const apiSchema = defineApiSchema({
 
 ```ts
 // src/api/client.ts
-import { createApiClient } from 'schematic-api'
+import { createApiClient } from 'mock-dash'
 import { apiSchema } from './schemas'
 
 export const apiClient = createApiClient({
@@ -165,7 +167,7 @@ useEffect(() => {
 
 ```ts
 // mock-server/index.ts
-import { defineMockServerSchema, generateMockApi } from 'schematic-api'
+import { defineMockServerSchema, generateMockApi } from 'mock-dash'
 import { zocker } from 'zocker'
 import { apiSchema } from '../src/api/schemas'
 
@@ -250,7 +252,7 @@ mock-server/
 
 ## API Schema Format
 
-SchematicAPI uses a simple convention for defining endpoints:
+MockDash uses a simple convention for defining endpoints:
 
 - `@{method}/{path}` - Define HTTP method and path
 - `input` - Define request validation (query, params, json, form)
@@ -366,8 +368,8 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 ### Development Setup
 
 ```bash
-git clone https://github.com/MrPorky/schematic-api.git
-cd schematic-api
+git clone https://github.com/MrPorky/mock-dash.git
+cd mock-dash
 pnpm install
 pnpm test
 ```
