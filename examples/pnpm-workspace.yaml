@@ -1,0 +1,7 @@
+packages:
+  - react
+  - nextjs
+  - nuxt
+  - sveltekit
+  - astro
+  - solidjs
