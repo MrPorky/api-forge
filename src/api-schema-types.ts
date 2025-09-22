@@ -97,7 +97,7 @@ export function defineMockServerSchema<T extends ApiSchema, F extends Faker<T>>(
       faker: faker || endpoint.faker,
     }
     return acc
-  }, {} as { [K in keyof T]: T[K] & { faker: F[K] } })
+  }, {} as { [K in keyof T]: F[K] extends object ? T[K] & { faker?: F[K] } : T[K] })
 }
 
 /**

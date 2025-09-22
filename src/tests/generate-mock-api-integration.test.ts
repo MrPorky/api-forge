@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
-import { defineApiSchema } from '../api-schema-types'
+import { defineApiSchema, defineMockServerSchema } from '../api-schema-types'
 import { MockError } from '../errors'
 import { generateMockApi } from '../generate-mock-api'
 
@@ -374,16 +374,10 @@ describe('generate-mock-api integration tests', () => {
         return { count }
       })
 
-      const customSchema = {
-        '@post/counter': {
-          ...schema['@post/counter'],
-          faker: postFaker,
-        },
-        '@get/counter': {
-          ...schema['@get/counter'],
-          faker: getFaker,
-        },
-      }
+      const customSchema = defineMockServerSchema(schema, {
+        '@post/counter': postFaker,
+        '@get/counter': getFaker,
+      })
 
       const mockFaker = vi.fn().mockReturnValue({})
       const { app } = generateMockApi(customSchema, mockFaker)
