@@ -128,6 +128,7 @@ export function createApiClient<T extends ApiSchema>(args: {
       request: new InterceptorManager<T, FetchOptions>(),
       response: new InterceptorManager<T, Response>(),
     },
+    overrides: {},
   }
 
   const requestApi = async (key: keyof T & string, data: Partial<ValidationTargets> | undefined = undefined) => {
@@ -251,7 +252,7 @@ export function createApiClient<T extends ApiSchema>(args: {
 
     let response: Response
     try {
-      response = await fetch(fullUrl, options)
+      response = await (properties.overrides.fetch || fetch)(fullUrl, options)
     }
     catch (error) {
       // Handle network errors (connection failures, timeouts, etc.)

@@ -130,6 +130,9 @@ export interface ClientProperties<T extends ApiSchema> {
     response: InterceptorManager<T, Response>
     request: InterceptorManager<T, FetchOptions>
   }
+  overrides: {
+    fetch?: typeof fetch
+  }
 }
 
 export type Client<T extends ApiSchema> = ClientFn<T> & ClientProperties<T>

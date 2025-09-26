@@ -47,5 +47,8 @@
     "scss",
     "pcss",
     "postcss"
-  ]
+  ],
+
+  // Use the workspace version of typescript
+  "typescript.tsdk": "node_modules\\typescript\\lib"
 }

@@ -2,8 +2,5 @@ import antfu from '@antfu/eslint-config'
 
 export default antfu({
   formatters: true,
-  ignores: ['**/*gen.ts'],
-  rules: {
-    'no-alert': 'off',
-  },
+  svelte: true,
 })
