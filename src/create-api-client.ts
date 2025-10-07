@@ -1,5 +1,5 @@
 import type { ValidationTargets } from 'hono'
-import type { ApiSchema, Endpoint } from './api-schema-types'
+import type { Endpoint } from './api-schema-types'
 import type {
   Args,
   Client,
@@ -8,10 +8,14 @@ import type {
   InterceptorCallback,
   InterceptorContext,
 } from './client-types'
-import { httpMethodSchema } from './api-schema-types'
+import { EndpointMap, httpMethodSchema } from './api-schema-types'
 import { InterceptorManager } from './client-types'
 import { ApiError, NetworkError, ValidationError } from './errors'
 import { buildFormData, serializeQueryParams } from './request-utils'
+
+type ApiSchemaEndpoints<T extends Record<string, unknown>> = {
+  [K in keyof T]: T[K] extends EndpointMap<infer E> ? E : never
+}[keyof T]
 
 /**
  * Creates a type-safe API client from an API schema with automatic request/response validation,
@@ -115,28 +119,39 @@ import { buildFormData, serializeQueryParams } from './request-utils'
  * })
  * ```
  */
-export function createApiClient<T extends ApiSchema>(args: {
+export function createApiClient<T extends Record<string, unknown>>(args: {
   apiSchema: T
   baseURL: string
-  transformRequest?: InterceptorCallback<T, FetchOptions>
-  transformResponse?: InterceptorCallback<T, Response>
-} & FetchOptions): Client<T> {
+  transformRequest?: InterceptorCallback<ApiSchemaEndpoints<T>, FetchOptions>
+  transformResponse?: InterceptorCallback<ApiSchemaEndpoints<T>, Response>
+} & FetchOptions): Client<ApiSchemaEndpoints<T>> {
   const { apiSchema, baseURL, headers: customHeaders, transformRequest, transformResponse, ...requestOptions } = args
 
-  const properties: ClientProperties<T> = {
+  const properties: ClientProperties<ApiSchemaEndpoints<T>> = {
     interceptors: {
-      request: new InterceptorManager<T, FetchOptions>(),
-      response: new InterceptorManager<T, Response>(),
+      request: new InterceptorManager<ApiSchemaEndpoints<T>, FetchOptions>(),
+      response: new InterceptorManager<ApiSchemaEndpoints<T>, Response>(),
     },
     overrides: {},
   }
 
-  const requestApi = async (key: keyof T & string, data: Partial<ValidationTargets> | undefined = undefined) => {
+  const mergedEndpointMap: Record<string, Endpoint> = {}
+  Object.values(apiSchema).forEach((endpoint) => {
+    if (!(endpoint instanceof EndpointMap)) {
+      return
+    }
+
+    Object.entries((endpoint as EndpointMap<Record<string, Endpoint>>).getAllEndpoints()).forEach(([key, ep]) => {
+      mergedEndpointMap[key] = ep
+    })
+  })
+
+  const requestApi = async (key: keyof ApiSchemaEndpoints<T> & string, data: Partial<ValidationTargets> | undefined = undefined) => {
     if (!key.startsWith('@')) {
       throw new ApiError(`Invalid endpoint key: ${key}. It should start with '@' followed by the HTTP method.`, 400)
     }
 
-    const endpoint = apiSchema[key] as Endpoint | undefined
+    const endpoint = mergedEndpointMap[key]
     if (!endpoint) {
       throw new ApiError(`Endpoint not found: ${key}`, 404)
     }
@@ -233,8 +248,8 @@ export function createApiClient<T extends ApiSchema>(args: {
     }
 
     // Enhanced interceptor context with proper typing
-    const inputs = data as Args<T, keyof T & string>[0]
-    const interceptorContext: InterceptorContext<T, keyof T & string> = {
+    const inputs = data as Args<ApiSchemaEndpoints<T>, keyof ApiSchemaEndpoints<T>>[0]
+    const interceptorContext: InterceptorContext<ApiSchemaEndpoints<T>, keyof ApiSchemaEndpoints<T>> = {
       key,
       inputs,
       method,

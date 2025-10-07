@@ -12,9 +12,7 @@
   const { data }: PageProps = $props()
   const { redirect } = data
 
-  type JSON = z.infer<
-    (typeof authApiSchema)['@post/auth/sign-in/email']['input']['json']
-  >
+  type JSON = (typeof authApiSchema.$inferInputJson['@post/auth/sign-in/email'])
 
   let errors = $state<ReturnType<typeof z.treeifyError<JSON>>>({
     errors: [],

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { defineApiMock, defineApiSchema, defineMockServerSchema } from '../api-schema-types'
+import { defineApiSchema } from '../api-schema-types'
 
 describe('api-schema-types', () => {
   describe('defineApiSchema', () => {
@@ -14,9 +14,11 @@ describe('api-schema-types', () => {
         },
       })
 
+      const schemaDef = schema.getAllEndpoints()
+
       expect(schema).toBeDefined()
-      expect(schema['@get/users']).toBeDefined()
-      expect(schema['@get/users'].response).toBeDefined()
+      expect(schemaDef['@get/users']).toBeDefined()
+      expect(schemaDef['@get/users'].response).toBeDefined()
     })
 
     it('should define schema with input validation', () => {
@@ -36,8 +38,11 @@ describe('api-schema-types', () => {
         },
       })
 
-      expect(schema['@post/users'].input).toBeDefined()
-      expect(schema['@post/users'].input?.json).toBeDefined()
+      const schemaDef = schema.getAllEndpoints()
+
+      expect(schemaDef['@post/users']).toBeDefined()
+      expect(schemaDef['@post/users'].input).toBeDefined()
+      expect(schemaDef['@post/users'].input?.json).toBeDefined()
     })
 
     it('should handle path parameters in endpoint keys', () => {
@@ -55,8 +60,10 @@ describe('api-schema-types', () => {
         },
       })
 
-      expect(schema['@get/users/:id']).toBeDefined()
-      expect(schema['@get/users/:id'].input?.param).toBeDefined()
+      const schemaDef = schema.getAllEndpoints()
+
+      expect(schemaDef['@get/users/:id']).toBeDefined()
+      expect(schemaDef['@get/users/:id'].input?.param).toBeDefined()
     })
   })
 
@@ -71,12 +78,11 @@ describe('api-schema-types', () => {
         },
       })
 
-      const mockData = defineApiMock(schema, {
+      schema.defineMock({
         '@get/users': () => [{ id: '1', name: 'Test User' }],
       })
 
-      expect(mockData).toBeDefined()
-      expect(mockData['@get/users']).toBeTypeOf('function')
+      expect(schema.getFaker('@get/users')).toBeTypeOf('function')
     })
   })
 
@@ -91,12 +97,11 @@ describe('api-schema-types', () => {
         },
       })
 
-      const mockSchema = defineMockServerSchema(schema, {
+      schema.defineMock({
         '@get/users': () => [{ id: '1', name: 'Test User' }],
       })
 
-      expect(mockSchema).toBeDefined()
-      expect(mockSchema['@get/users'].faker).toBeDefined()
+      expect(schema.getFaker('@get/users')).toBeDefined()
     })
   })
 })

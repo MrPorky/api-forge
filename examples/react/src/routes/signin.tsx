@@ -15,9 +15,7 @@ export const Route = createFileRoute('/signin')({
   }),
 })
 
-type JSON = z.infer<
-  (typeof authApiSchema)['@post/auth/sign-in/email']['input']['json']
->
+type JSON = typeof authApiSchema.$inferInputJson['@post/auth/sign-in/email']
 
 function RouteComponent() {
   const navigate = useNavigate()

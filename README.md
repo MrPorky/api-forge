@@ -99,13 +99,7 @@ export const usersSchema = defineApiSchema({
 
 ```ts
 // src/api/schemas/index.ts
-import { defineApiSchema } from 'mock-dash'
-import { usersSchema } from './users'
-
-export const apiSchema = defineApiSchema({
-  ...usersSchema,
-  // ...otherSchemas
-})
+export { usersSchema } from './users'
 ```
 
 ### 3. Create Your API Client
@@ -113,7 +107,7 @@ export const apiSchema = defineApiSchema({
 ```ts
 // src/api/client.ts
 import { createApiClient } from 'mock-dash'
-import { apiSchema } from './schemas'
+import * as apiSchema from './schemas'
 
 export const apiClient = createApiClient({
   apiSchema,
@@ -167,12 +161,12 @@ useEffect(() => {
 
 ```ts
 // mock-server/index.ts
-import { defineMockServerSchema, generateMockApi } from 'mock-dash'
+import { generateMockApi } from 'mock-dash'
 import { zocker } from 'zocker'
-import { apiSchema } from '../src/api/schemas'
+import * as apiSchema from '../src/api/schemas'
 
 // Optional: Define custom mocks
-const customMocks = {
+apiSchema.defineMock({
   '@get/users/:id': () => ({
     id: '123',
     personalNumber: '199001011234',
@@ -180,9 +174,7 @@ const customMocks = {
     givenName: 'John',
     surname: 'Doe',
   })
-}
-
-const mockSchema = defineMockServerSchema(apiSchema, customMocks)
+})
 
 // Use any Zod-compatible faker library
 function generateFakeData(zodSchema) {
@@ -190,7 +182,7 @@ function generateFakeData(zodSchema) {
   return zocker(zodSchema).generate()
 }
 
-const { app, mockContext } = generateMockApi(mockSchema, generateFakeData, {
+const { app, mockContext } = generateMockApi(apiSchema, generateFakeData, {
   base: '/api',
   addMiddleware: (app) => {
     // Add CORS, auth, or other middleware

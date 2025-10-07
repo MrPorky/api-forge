@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { ApiError, isApiError, isMockError, isNetworkError, isValidationError, MockError, NetworkError, ValidationError } from '../errors'
+import { isApiError, isMockError, isNetworkError, isValidationError } from '../error-guards'
+import { ApiError, MockError, NetworkError, ValidationError } from '../errors'
 
 describe('errors', () => {
   describe('apiError', () => {

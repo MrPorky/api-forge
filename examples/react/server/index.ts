@@ -1,16 +1,11 @@
 import { deleteCookie } from 'hono/cookie'
 import { HTTPException } from 'hono/http-exception'
 import { jwt } from 'hono/jwt'
-import { defineMockServerSchema, generateMockApi } from 'mock-dash'
+import { generateMockApi } from 'mock-dash'
 import { zocker } from 'zocker'
-import { apiSchema } from '@/api/schemas'
-import { authApiMock } from '@/api/schemas/auth-schema'
+import * as apiSchema from '@/api/schemas'
 
-const mockServerSchema = defineMockServerSchema(apiSchema, {
-  ...authApiMock,
-})
-
-const { app } = generateMockApi(mockServerSchema, s => zocker(s).generate(), {
+const { app } = generateMockApi(apiSchema, s => zocker(s).generate(), {
   addMiddleware: (app) => {
     app.onError((err, c) => {
       if (err instanceof HTTPException && err.status === 401) {
