@@ -1,9 +1,10 @@
 import type { ValidationTargets } from 'hono'
 import type z from 'zod'
-import type { ApiSchema } from './api-schema-types'
+import type { ApiSchema, EndpointMap } from './api-schema-types'
+import type { FakerMap } from './mock-types'
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
-import { httpMethodSchema } from './api-schema-types'
+import { apiSchemaToEndpointMap, httpMethodSchema, isEndpoint } from './api-schema-types'
 import { MockError } from './errors'
 
 export type FakeFn = <T extends z.ZodType>(schema: T) => T['_zod']['output']
@@ -126,8 +127,15 @@ export function generateMockApi<T extends ApiSchema>(apiSchema: T, fake: FakeFn,
   const app = new Hono().basePath(options.base ?? '')
 
   options.addMiddleware?.(app)
+  const endpointMap = apiSchemaToEndpointMap(apiSchema)
 
-  for (const [key, endpoint] of Object.entries(apiSchema)) {
+  for (const [key, endpoint] of Object.entries(endpointMap)) {
+    if (!endpoint)
+      return
+
+    if (!isEndpoint(endpoint))
+      return
+
     if (key.startsWith('@')) {
       const parts = key.split('/')
       const httpMethodPart = parts[0].replace('@', '')
@@ -216,4 +224,55 @@ export function generateMockApi<T extends ApiSchema>(apiSchema: T, fake: FakeFn,
   }
 
   return { app, mockContext }
+}
+
+/**
+ * Defines custom mock data generators for an existing API schema without modifying the original schema.
+ * This function is useful when you want to create different mock configurations for the same API schema,
+ * such as different test scenarios or development environments.
+ *
+ * @template T - The API schema type extending ApiSchema
+ * @template F - The faker configuration type extending Faker<T>
+ *
+ * @param _schema - The API schema (used for type inference only)
+ * @param overrideFaker - Custom faker functions for generating mock data for specific endpoints
+ *
+ * @returns The faker configuration that can be used with defineMockServerSchema
+ *
+ * @example
+ * ```typescript
+ * import { z } from 'zod'
+ * import { defineApiSchema, defineApiMock, defineMockServerSchema } from 'mock-dash'
+ *
+ * const apiSchema = defineApiSchema({
+ *   '@get/users/:id': {
+ *     input: { param: z.object({ id: z.string() }) },
+ *     response: z.object({ id: z.string(), name: z.string(), role: z.string() })
+ *   }
+ * })
+ *
+ * // Define different mock scenarios
+ * const adminMocks = defineApiMock(apiSchema, {
+ *   '@get/users/:id': () => ({
+ *     id: '1',
+ *     name: 'Admin User',
+ *     role: 'admin'
+ *   })
+ * })
+ *
+ * const regularUserMocks = defineApiMock(apiSchema, {
+ *   '@get/users/:id': () => ({
+ *     id: '2',
+ *     name: 'Regular User',
+ *     role: 'user'
+ *   })
+ * })
+ *
+ * // Use with different configurations
+ * const adminMockSchema = defineMockServerSchema(apiSchema, adminMocks)
+ * const userMockSchema = defineMockServerSchema(apiSchema, regularUserMocks)
+ * ```
+ */
+export function defineApiMock<T extends EndpointMap>(_schema: T, overrideFaker: FakerMap<T>) {
+  return overrideFaker
 }

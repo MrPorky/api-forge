@@ -8,7 +8,7 @@ import type {
   InterceptorCallback,
   InterceptorContext,
 } from './client-types'
-import { httpMethodSchema } from './api-schema-types'
+import { apiSchemaToEndpointMap, httpMethodSchema } from './api-schema-types'
 import { InterceptorManager } from './client-types'
 import { ApiError, NetworkError, ValidationError } from './errors'
 import { buildFormData, serializeQueryParams } from './request-utils'
@@ -122,6 +122,7 @@ export function createApiClient<T extends ApiSchema>(args: {
   transformResponse?: InterceptorCallback<T, Response>
 } & FetchOptions): Client<T> {
   const { apiSchema, baseURL, headers: customHeaders, transformRequest, transformResponse, ...requestOptions } = args
+  const endpointMap = apiSchemaToEndpointMap(apiSchema)
 
   const properties: ClientProperties<T> = {
     interceptors: {
@@ -136,7 +137,7 @@ export function createApiClient<T extends ApiSchema>(args: {
       throw new ApiError(`Invalid endpoint key: ${key}. It should start with '@' followed by the HTTP method.`, 400)
     }
 
-    const endpoint = apiSchema[key] as Endpoint | undefined
+    const endpoint = endpointMap[key] as Endpoint | undefined
     if (!endpoint) {
       throw new ApiError(`Endpoint not found: ${key}`, 404)
     }

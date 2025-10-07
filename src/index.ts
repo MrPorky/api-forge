@@ -1,7 +1,7 @@
 export {
-  defineApiMock,
+  apiSchemaToEndpointMap,
+
   defineApiSchema,
-  defineMockServerSchema,
 } from './api-schema-types'
 export { createApiClient } from './create-api-client'
 export {
@@ -14,4 +14,4 @@ export {
   NetworkError,
   ValidationError,
 } from './errors'
-export { generateMockApi } from './generate-mock-api'
+export { defineApiMock, generateMockApi } from './generate-mock-api'

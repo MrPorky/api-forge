@@ -38,7 +38,7 @@ describe('create-api-client functional tests', () => {
       } as Response)
 
       const client = createApiClient({
-        apiSchema: schema,
+        endpointMap: schema,
         baseURL: 'https://api.example.com',
       })
 
@@ -80,7 +80,7 @@ describe('create-api-client functional tests', () => {
       } as Response)
 
       const client = createApiClient({
-        apiSchema: schema,
+        endpointMap: schema,
         baseURL: 'https://api.example.com',
       })
 
@@ -126,7 +126,7 @@ describe('create-api-client functional tests', () => {
       } as Response)
 
       const client = createApiClient({
-        apiSchema: schema,
+        endpointMap: schema,
         baseURL: 'https://api.example.com',
       })
 
@@ -170,7 +170,7 @@ describe('create-api-client functional tests', () => {
       } as Response)
 
       const client = createApiClient({
-        apiSchema: schema,
+        endpointMap: schema,
         baseURL: 'https://api.example.com',
       })
 
@@ -214,7 +214,7 @@ describe('create-api-client functional tests', () => {
       mockFetch.mockResolvedValue(errorResponse)
 
       const client = createApiClient({
-        apiSchema: schema,
+        endpointMap: schema,
         baseURL: 'https://api.example.com',
       })
 
@@ -243,7 +243,7 @@ describe('create-api-client functional tests', () => {
       mockFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'))
 
       const client = createApiClient({
-        apiSchema: schema,
+        endpointMap: schema,
         baseURL: 'https://api.example.com',
       })
 
@@ -268,7 +268,7 @@ describe('create-api-client functional tests', () => {
       })
 
       const client = createApiClient({
-        apiSchema: schema,
+        endpointMap: schema,
         baseURL: 'https://api.example.com',
       })
 
@@ -294,7 +294,7 @@ describe('create-api-client functional tests', () => {
       } as Response)
 
       const client = createApiClient({
-        apiSchema: schema,
+        endpointMap: schema,
         baseURL: 'https://api.example.com',
       })
 
@@ -320,7 +320,7 @@ describe('create-api-client functional tests', () => {
       } as Response)
 
       const client = createApiClient({
-        apiSchema: schema,
+        endpointMap: schema,
         baseURL: 'https://api.example.com',
       })
 
@@ -366,7 +366,7 @@ describe('create-api-client functional tests', () => {
       mockFetch.mockResolvedValueOnce(originalResponse)
 
       const client = createApiClient({
-        apiSchema: schema,
+        endpointMap: schema,
         baseURL: 'https://api.example.com',
       })
 

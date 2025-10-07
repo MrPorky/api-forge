@@ -1,5 +1,5 @@
 import type { ValidationTargets } from 'hono'
-import type { ApiResponseGenerator, Faker } from './mock-types'
+import type { ApiResponseGenerator, FakerMap } from './mock-types'
 import type { RemoveNever } from './type-utils'
 import z from 'zod'
 
@@ -18,10 +18,12 @@ export interface Endpoint<T extends z.ZodType = z.ZodType | z.ZodArray<z.ZodType
       : z.ZodType
   }
   response: T
-  faker?: ApiResponseGenerator<any, T>
 }
 
-export type ApiSchema = Record<`@${HttpMethod}/${string}`, Endpoint>
+type ApiMethodRoute = `@${HttpMethod}/${string}`
+
+export type EndpointMap = Record<ApiMethodRoute, Endpoint>
+export type ApiSchema = Record<string, EndpointMap | FakerMap<EndpointMap>>
 
 type UrlParamRecordWithKey<T extends string, K extends string>
   = T extends `${string}:${infer P}`
@@ -88,17 +90,17 @@ export type InputsWithParam<T extends Endpoint['input'], K extends string>
  * })
  * ```
  */
-export function defineMockServerSchema<T extends ApiSchema, F extends Faker<T>>(schema: T, overrideFaker: F = {} as F) {
-  return Object.entries(schema).reduce((acc, [key, endpoint]) => {
-    const faker = overrideFaker[key as keyof F]
-    // @ts-expect-error TypeScript can't infer the type here, but we know it's correct
-    acc[key] = {
-      ...endpoint,
-      faker: faker || endpoint.faker,
-    }
-    return acc
-  }, {} as { [K in keyof T]: F[K] extends object ? T[K] & { faker?: F[K] } : T[K] })
-}
+// export function defineMockServerSchema<T extends ApiSchema, F extends Faker<T>>(schema: T, overrideFaker: F = {} as F) {
+//   return Object.entries(schema).reduce((acc, [key, endpoint]) => {
+//     const faker = overrideFaker[key as keyof F]
+//     // @ts-expect-error TypeScript can't infer the type here, but we know it's correct
+//     acc[key] = {
+//       ...endpoint,
+//       faker: faker || endpoint.faker,
+//     }
+//     return acc
+//   }, {} as { [K in keyof T]: F[K] extends object ? T[K] & { faker?: F[K] } : T[K] })
+// }
 
 /**
  * Defines an API schema with type-safe endpoint definitions using Zod validation schemas.
@@ -161,58 +163,19 @@ export function defineMockServerSchema<T extends ApiSchema, F extends Faker<T>>(
  * })
  * ```
  */
-export function defineApiSchema<T extends ApiSchema>(schema: { [K in keyof T & `@${HttpMethod}/${string}` ]: T[K] & { faker?: never } }): T {
-  // @ts-expect-error typescript cant infer type
+export function defineApiSchema<T extends EndpointMap>(schema: T): T {
   return schema
 }
 
-/**
- * Defines custom mock data generators for an existing API schema without modifying the original schema.
- * This function is useful when you want to create different mock configurations for the same API schema,
- * such as different test scenarios or development environments.
- *
- * @template T - The API schema type extending ApiSchema
- * @template F - The faker configuration type extending Faker<T>
- *
- * @param _schema - The API schema (used for type inference only)
- * @param overrideFaker - Custom faker functions for generating mock data for specific endpoints
- *
- * @returns The faker configuration that can be used with defineMockServerSchema
- *
- * @example
- * ```typescript
- * import { z } from 'zod'
- * import { defineApiSchema, defineApiMock, defineMockServerSchema } from 'mock-dash'
- *
- * const apiSchema = defineApiSchema({
- *   '@get/users/:id': {
- *     input: { param: z.object({ id: z.string() }) },
- *     response: z.object({ id: z.string(), name: z.string(), role: z.string() })
- *   }
- * })
- *
- * // Define different mock scenarios
- * const adminMocks = defineApiMock(apiSchema, {
- *   '@get/users/:id': () => ({
- *     id: '1',
- *     name: 'Admin User',
- *     role: 'admin'
- *   })
- * })
- *
- * const regularUserMocks = defineApiMock(apiSchema, {
- *   '@get/users/:id': () => ({
- *     id: '2',
- *     name: 'Regular User',
- *     role: 'user'
- *   })
- * })
- *
- * // Use with different configurations
- * const adminMockSchema = defineMockServerSchema(apiSchema, adminMocks)
- * const userMockSchema = defineMockServerSchema(apiSchema, regularUserMocks)
- * ```
- */
-export function defineApiMock<T extends ApiSchema, F extends Faker<T>>(_schema: T, overrideFaker: F) {
-  return overrideFaker
+export function apiSchemaToEndpointMap<T extends ApiSchema>(schema: T) {
+  return Object.values(schema).reduce((acc, endpointMap) => {
+    Object.entries(endpointMap).forEach(([key, endpoint]) => {
+      acc[key as keyof EndpointMap] = endpoint
+    })
+    return acc
+  }, {} as Record<string, EndpointMap[ApiMethodRoute] | FakerMap<EndpointMap>[ApiMethodRoute]>)
+}
+
+export function isEndpoint(obj: unknown): obj is Endpoint {
+  return typeof obj === 'object' && obj !== null && 'response' in obj
 }

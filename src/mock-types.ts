@@ -1,6 +1,6 @@
 import type { Context, Env, ValidationTargets } from 'hono'
 import type z from 'zod'
-import type { ApiSchema, Endpoint } from './api-schema-types'
+import type { ApiSchema, Endpoint, EndpointMap } from './api-schema-types'
 
 type InferZodType<T extends z.ZodType> = T extends z.ZodObject ? Partial<z.infer<T>> : z.infer<T>
 
@@ -39,4 +39,8 @@ export type Faker<T extends ApiSchema> = {
   [K in keyof T]?: T[K] extends Endpoint
     ? ApiResponseGenerator<T[K]['input'], T[K]['response']>
     : never
+}
+
+export type FakerMap<T extends EndpointMap> = {
+  [K in keyof T]?: T[K] extends Endpoint ? ApiResponseGenerator<T[K]['input'], T[K]['response']> : never
 }
