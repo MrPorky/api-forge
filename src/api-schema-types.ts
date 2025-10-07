@@ -1,14 +1,19 @@
 import type { ValidationTargets } from 'hono'
-import type { ApiResponseGenerator, FakerMap } from './mock-types'
+import type { ApiResponseGenerator } from './mock-types'
 import type { RemoveNever } from './type-utils'
 import z from 'zod'
 
+/** Internal enum schema for supported HTTP methods */
 export const httpMethodSchema = z.enum(['get', 'post', 'patch', 'put', 'delete'])
+/** Union type of supported lowercase HTTP methods */
 export type HttpMethod = z.infer<typeof httpMethodSchema>
 
 type ZodParsedFormValue = z.ZodString | z.ZodFile
 type ZodFormValue = ZodParsedFormValue | z.ZodOptional<ZodParsedFormValue>
 
+/**
+ * Describes a single API endpoint contract: optional validated inputs and required response schema.
+ */
 export interface Endpoint<T extends z.ZodType = z.ZodType | z.ZodArray<z.ZodType>> {
   input?: {
     [K in keyof ValidationTargets]?: ValidationTargets[K] extends Record<infer Keys, unknown>
@@ -20,10 +25,8 @@ export interface Endpoint<T extends z.ZodType = z.ZodType | z.ZodArray<z.ZodType
   response: T
 }
 
-type ApiMethodRoute = `@${HttpMethod}/${string}`
-
-export type EndpointMap = Record<ApiMethodRoute, Endpoint>
-export type ApiSchema = Record<string, EndpointMap | FakerMap<EndpointMap>>
+/** Pattern for endpoint keys: e.g. '@get/users/:id' */
+export type ApiMethodRoute = `@${HttpMethod}/${string}`
 
 type UrlParamRecordWithKey<T extends string, K extends string>
   = T extends `${string}:${infer P}`
@@ -49,58 +52,6 @@ type Inputs<T extends Endpoint['input']> = T extends undefined ? object : {
 
 export type InputsWithParam<T extends Endpoint['input'], K extends string>
   = RemoveNever<{ param: PathParamToObject<K> } & Inputs<T>>
-
-/**
- * Defines a mock server schema by combining an API schema with custom mock data generators.
- * This function merges the base API schema with custom faker functions to create a complete
- * mock server configuration that can generate realistic test data.
- *
- * @template T - The API schema type extending ApiSchema
- * @template F - The faker configuration type extending Faker<T>
- *
- * @param schema - The base API schema defining endpoints, validation, and response types
- * @param overrideFaker - Custom faker functions to override default data generation for specific endpoints
- *
- * @returns A complete mock server schema with faker functions attached to each endpoint
- *
- * @example
- * ```typescript
- * import { z } from 'zod'
- * import { defineApiSchema, defineMockServerSchema } from 'mock-dash'
- *
- * const apiSchema = defineApiSchema({
- *   '@get/users/:id': {
- *     input: {
- *       param: z.object({ id: z.string() })
- *     },
- *     response: z.object({
- *       id: z.string(),
- *       name: z.string(),
- *       email: z.string().email()
- *     })
- *   }
- * })
- *
- * const mockSchema = defineMockServerSchema(apiSchema, {
- *   '@get/users/:id': ({ inputs }) => ({
- *     id: inputs.param.id,
- *     name: 'John Doe',
- *     email: 'john@example.com'
- *   })
- * })
- * ```
- */
-// export function defineMockServerSchema<T extends ApiSchema, F extends Faker<T>>(schema: T, overrideFaker: F = {} as F) {
-//   return Object.entries(schema).reduce((acc, [key, endpoint]) => {
-//     const faker = overrideFaker[key as keyof F]
-//     // @ts-expect-error TypeScript can't infer the type here, but we know it's correct
-//     acc[key] = {
-//       ...endpoint,
-//       faker: faker || endpoint.faker,
-//     }
-//     return acc
-//   }, {} as { [K in keyof T]: F[K] extends object ? T[K] & { faker?: F[K] } : T[K] })
-// }
 
 /**
  * Defines an API schema with type-safe endpoint definitions using Zod validation schemas.
@@ -163,19 +114,66 @@ export type InputsWithParam<T extends Endpoint['input'], K extends string>
  * })
  * ```
  */
-export function defineApiSchema<T extends EndpointMap>(schema: T): T {
-  return schema
+export function defineApiSchema<T extends EndpointMapType>(schema: T) {
+  return new EndpointMap(schema)
 }
 
-export function apiSchemaToEndpointMap<T extends ApiSchema>(schema: T) {
-  return Object.values(schema).reduce((acc, endpointMap) => {
-    Object.entries(endpointMap).forEach(([key, endpoint]) => {
-      acc[key as keyof EndpointMap] = endpoint
-    })
-    return acc
-  }, {} as Record<string, EndpointMap[ApiMethodRoute] | FakerMap<EndpointMap>[ApiMethodRoute]>)
+type EndpointMapType = Record<ApiMethodRoute, Endpoint>
+
+/**
+ * Holds endpoint definitions and associated mock (faker) functions.
+ */
+export class EndpointMap<T extends EndpointMapType> {
+  private readonly schema: T
+  private fakerMap: FakerMap<T>
+
+  public $inferInputJson: {
+    [K in keyof T]: T[K] extends { input: { json: z.ZodType } } ? z.infer<T[K]['input']['json']> : never
+  } = {} as any
+
+  constructor(schema: T) {
+    this.schema = schema
+    this.fakerMap = new FakerMap({})
+  }
+
+  getAllEndpoints(): T {
+    return this.schema
+  }
+
+  getEndpoint(route: keyof T): T[keyof T] {
+    return this.schema[route]
+  }
+
+  /** Attach custom faker implementations per endpoint */
+  defineMock(faker: FakerMapType<T>) {
+    this.fakerMap = new FakerMap(faker)
+  }
+
+  /** Retrieve a faker for a specific route key */
+  getFaker(route: string) {
+    return this.fakerMap.getFaker(route)
+  }
 }
 
-export function isEndpoint(obj: unknown): obj is Endpoint {
-  return typeof obj === 'object' && obj !== null && 'response' in obj
+type FakerMapType<T extends EndpointMapType> = {
+  [K in keyof T]?: T[K] extends Endpoint ? ApiResponseGenerator<T[K]['input'], T[K]['response']> : never
+}
+
+/** Lightweight wrapper around the raw faker map */
+export class FakerMap<T extends EndpointMapType> {
+  private readonly fakerMap: FakerMapType<T>
+
+  constructor(fakerMap: FakerMapType<T>) {
+    this.fakerMap = fakerMap
+  }
+
+  /** Lookup faker by route */
+  getFaker(route: string) {
+    return route in this.fakerMap ? this.fakerMap[route as keyof T] : undefined
+  }
+
+  /** Return entire underlying faker map */
+  getAllFakers() {
+    return this.fakerMap
+  }
 }

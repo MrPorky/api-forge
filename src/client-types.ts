@@ -1,18 +1,25 @@
 import type z from 'zod'
-import type { ApiSchema, Endpoint, InputsWithParam } from './api-schema-types'
+import type { Endpoint, InputsWithParam } from './api-schema-types'
 import type { EmptyObjectIsNever } from './type-utils'
 
+type ApiSchema = Record<string, Endpoint>
+
+/**
+ * Inferred argument tuple for a given endpoint key. Empty input => no arg required.
+ */
 export type Args<T extends ApiSchema, K extends keyof T> = T[K] extends Endpoint
   ? EmptyObjectIsNever<InputsWithParam<T[K]['input'], K & string>> extends never
     ? []
     : [data: InputsWithParam<T[K]['input'], K & string>]
   : never
 
+/** Core callable signature for the generated API client */
 export type ClientFn<T extends ApiSchema> = <K extends keyof T>(
   key: K,
   ...args: Args<T, K>
 ) => T[K] extends Endpoint ? Promise<z.infer<T[K]['response']>> : never
 
+/** Runtime context passed to interceptor callbacks */
 export interface InterceptorContext<T extends ApiSchema, K extends keyof T = keyof T> {
   readonly key: K
   readonly inputs: Args<T, K>[0]
@@ -20,6 +27,7 @@ export interface InterceptorContext<T extends ApiSchema, K extends keyof T = key
   readonly path: string
 }
 
+/** Function shape for interceptor handlers */
 export type InterceptorCallback<T extends ApiSchema, D, K extends keyof T = keyof T> = (
   context: InterceptorContext<T, K>,
   data: D
@@ -30,6 +38,7 @@ export type InterceptorCallback<T extends ApiSchema, D, K extends keyof T = keyo
  * Interceptors are executed in the order they were added, and each interceptor receives the result
  * of the previous interceptor in the chain.
  */
+/** Registers and executes a chain of interceptor callbacks */
 export class InterceptorManager<T extends ApiSchema, D> {
   private readonly callbacks: Array<InterceptorCallback<T, D>> = []
 
@@ -125,6 +134,7 @@ export class InterceptorManager<T extends ApiSchema, D> {
   }
 }
 
+/** Additional properties attached to the client function */
 export interface ClientProperties<T extends ApiSchema> {
   interceptors: {
     response: InterceptorManager<T, Response>
@@ -135,6 +145,8 @@ export interface ClientProperties<T extends ApiSchema> {
   }
 }
 
+/** Full API client type (callable + attached properties) */
 export type Client<T extends ApiSchema> = ClientFn<T> & ClientProperties<T>
 
+/** Supported subset of RequestInit options accepted by the client */
 export type FetchOptions = Omit<RequestInit, 'body' | 'window' | 'method'>

@@ -1,17 +1,12 @@
 import type { RequestHandler } from '@sveltejs/kit'
-import { apiSchema } from '$lib/schemas'
-import { authApiMock } from '$lib/schemas/auth-schema'
+import * as apiSchema from '$lib/schemas'
 import { deleteCookie } from 'hono/cookie'
 import { HTTPException } from 'hono/http-exception'
 import { jwt } from 'hono/jwt'
-import { defineMockServerSchema, generateMockApi } from 'mock-dash'
+import { generateMockApi } from 'mock-dash'
 import { zocker } from 'zocker'
 
-const mockServerSchema = defineMockServerSchema(apiSchema, {
-  ...authApiMock,
-})
-
-const { app } = generateMockApi(mockServerSchema, s => zocker(s).setSeed(100).generate(), {
+const { app } = generateMockApi(apiSchema, s => zocker(s).setSeed(100).generate(), {
   addMiddleware: (app) => {
     app.onError((err, c) => {
       if (err instanceof HTTPException && err.status === 401) {

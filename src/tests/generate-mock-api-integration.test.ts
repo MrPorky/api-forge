@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
-import { defineApiSchema, defineMockServerSchema } from '../api-schema-types'
+import { defineApiSchema } from '../api-schema-types'
 import { MockError } from '../errors'
 import { generateMockApi } from '../generate-mock-api'
 
@@ -21,7 +21,7 @@ describe('generate-mock-api integration tests', () => {
         { id: '2', name: 'Jane Smith' },
       ])
 
-      const { app } = generateMockApi(schema, mockFaker)
+      const { app } = generateMockApi({ schema }, mockFaker)
       const response = await app.request('/users')
 
       expect(response.status).toBe(200)
@@ -30,7 +30,7 @@ describe('generate-mock-api integration tests', () => {
         { id: '1', name: 'John Doe' },
         { id: '2', name: 'Jane Smith' },
       ])
-      expect(mockFaker).toHaveBeenCalledWith(schema['@get/users'].response)
+      expect(mockFaker).toHaveBeenCalledWith(schema.getEndpoint('@get/users').response)
     })
 
     it('should handle POST request with JSON input validation', async () => {
@@ -56,7 +56,7 @@ describe('generate-mock-api integration tests', () => {
         email: 'john@example.com',
       })
 
-      const { app } = generateMockApi(schema, mockFaker)
+      const { app } = generateMockApi({ schema }, mockFaker)
       const response = await app.request('/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -95,7 +95,7 @@ describe('generate-mock-api integration tests', () => {
         name: 'John Doe',
       })
 
-      const { app } = generateMockApi(schema, mockFaker)
+      const { app } = generateMockApi({ schema }, mockFaker)
       const response = await app.request('/users/123')
 
       expect(response.status).toBe(200)
@@ -126,7 +126,7 @@ describe('generate-mock-api integration tests', () => {
         { id: '1', name: 'John' },
       ])
 
-      const { app } = generateMockApi(schema, mockFaker)
+      const { app } = generateMockApi({ schema }, mockFaker)
       const response = await app.request('/users?page=1&limit=10')
 
       expect(response.status).toBe(200)
@@ -155,15 +155,12 @@ describe('generate-mock-api integration tests', () => {
         details: context.inputs.query.include ? 'Detailed info' : undefined,
       }))
 
-      const customSchema = {
-        '@get/users/:id': {
-          ...schema['@get/users/:id'],
-          faker: customFaker,
-        },
-      }
+      schema.defineMock({
+        '@get/users/:id': customFaker,
+      })
 
       const mockFaker = vi.fn().mockReturnValue({})
-      const { app } = generateMockApi(customSchema, mockFaker)
+      const { app } = generateMockApi({ schema }, mockFaker)
 
       const response = await app.request('/users/42?include=details')
 
@@ -201,18 +198,15 @@ describe('generate-mock-api integration tests', () => {
         name: `User ${index}`,
       }))
 
-      const customSchema = {
+      schema.defineMock({
         '@get/users': {
-          ...schema['@get/users'],
-          faker: {
-            length: 3,
-            faker: itemFaker,
-          },
+          length: 3,
+          faker: itemFaker,
         },
-      }
+      })
 
       const mockFaker = vi.fn().mockReturnValue([])
-      const { app } = generateMockApi(customSchema, mockFaker)
+      const { app } = generateMockApi({ schema }, mockFaker)
 
       const response = await app.request('/users')
 
@@ -240,15 +234,12 @@ describe('generate-mock-api integration tests', () => {
         throw new MockError('Not found', 404)
       })
 
-      const customSchema = {
-        '@get/error': {
-          ...schema['@get/error'],
-          faker: customFaker,
-        },
-      }
+      schema.defineMock({
+        '@get/error': customFaker,
+      })
 
       const mockFaker = vi.fn().mockReturnValue({})
-      const { app } = generateMockApi(customSchema, mockFaker)
+      const { app } = generateMockApi({ schema }, mockFaker)
 
       const response = await app.request('/error')
 
@@ -278,7 +269,7 @@ describe('generate-mock-api integration tests', () => {
         filename: 'test.txt',
       })
 
-      const { app } = generateMockApi(schema, mockFaker)
+      const { app } = generateMockApi({ schema }, mockFaker)
 
       const formData = new FormData()
       formData.append('name', 'test.txt')
@@ -314,7 +305,7 @@ describe('generate-mock-api integration tests', () => {
         .mockReturnValueOnce([{ id: '1', name: 'Existing User' }])
         .mockReturnValueOnce({ id: '2', name: 'New User' })
 
-      const { app } = generateMockApi(schema, mockFaker)
+      const { app } = generateMockApi({ schema }, mockFaker)
 
       // Test GET
       const getResponse = await app.request('/users')
@@ -341,7 +332,7 @@ describe('generate-mock-api integration tests', () => {
       })
 
       const mockFaker = vi.fn().mockReturnValue([{ id: '1' }])
-      const { app } = generateMockApi(schema, mockFaker, {
+      const { app } = generateMockApi({ schema }, mockFaker, {
         base: '/api/v1',
       })
 
@@ -374,13 +365,13 @@ describe('generate-mock-api integration tests', () => {
         return { count }
       })
 
-      const customSchema = defineMockServerSchema(schema, {
+      schema.defineMock({
         '@post/counter': postFaker,
         '@get/counter': getFaker,
       })
 
       const mockFaker = vi.fn().mockReturnValue({})
-      const { app } = generateMockApi(customSchema, mockFaker)
+      const { app } = generateMockApi({ schema }, mockFaker)
 
       // Initial GET should return 0
       const getResponse1 = await app.request('/counter')
