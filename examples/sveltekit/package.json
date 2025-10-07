@@ -15,11 +15,11 @@
     "mock-dash": "link:..\\.."
   },
   "devDependencies": {
-    "@sveltejs/adapter-auto": "^6.0.0",
-    "@sveltejs/kit": "^2.22.0",
-    "@sveltejs/vite-plugin-svelte": "^6.0.0",
+    "@sveltejs/adapter-auto": "^6.1.1",
+    "@sveltejs/kit": "^2.46.1",
+    "@sveltejs/vite-plugin-svelte": "^6.2.1",
     "eslint-plugin-svelte": "^3.12.4",
-    "svelte": "^5.0.0",
-    "svelte-check": "^4.0.0"
+    "svelte": "^5.39.9",
+    "svelte-check": "^4.3.2"
   }
 }
