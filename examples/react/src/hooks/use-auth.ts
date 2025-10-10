@@ -2,7 +2,7 @@ import type { User } from '@/models/user'
 import { createContext, use } from 'react'
 
 export interface AuthContextType {
-  initialLoadig: boolean
+  initialLoading: boolean
   user: User | null
   isAuthenticated: boolean
   getSession: () => void

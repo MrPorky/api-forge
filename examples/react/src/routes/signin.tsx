@@ -1,4 +1,5 @@
 import type { AriaAttributes, FormEventHandler } from 'react'
+import type { signIn } from '@/api/schemas/auth-schema'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { isValidationError } from 'mock-dash'
 import { useState } from 'react'
@@ -6,7 +7,6 @@ import z from 'zod'
 import { apiClient } from '@/api/api-client'
 import { CenterLayout } from '@/components/center-layout/center-layout'
 import { ErrorParagraph } from '@/components/error-paragraph/error-paragraph'
-import type { signIn } from '@/api/schemas/auth-schema'
 
 export const Route = createFileRoute('/signin')({
   component: RouteComponent,
@@ -88,7 +88,7 @@ function RouteComponent() {
               {...addFieldErrors('email')}
             />
             {(errors.properties?.email?.errors ?? []).map(error => (
-              <small id="email-helper">{error}</small>
+              <small id="email-helper" key={error}>{error}</small>
             ))}
 
           </label>
@@ -105,7 +105,7 @@ function RouteComponent() {
 
             />
             {(errors.properties?.password?.errors ?? []).map(error => (
-              <small id="password-helper">{error}</small>
+              <small id="password-helper" key={error}>{error}</small>
             ))}
           </label>
           <fieldset>
@@ -123,7 +123,7 @@ function RouteComponent() {
           <button type="submit">Signin</button>
 
           {(errors.errors).map(error => (
-            <ErrorParagraph>{error}</ErrorParagraph>
+            <ErrorParagraph key={error}>{error}</ErrorParagraph>
           ))}
           <small>
             Don't have an account?

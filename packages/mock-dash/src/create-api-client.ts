@@ -9,8 +9,9 @@ import { ApiError, NetworkError, ValidationError } from './errors'
 import { buildFormData, serializeQueryParams } from './request-utils'
 
 type ApiSchemaEndpoints<T extends Record<string, unknown>> = {
-  [Key in keyof T]: T[Key] extends Endpoint<infer K, z.ZodType | z.ZodArray, infer E> ? Record<K, E> : never
-}[keyof T]
+  [K in keyof T as T[K] extends Endpoint<infer EndpointKey, any, any> ? EndpointKey : never]:
+  T[K] extends Endpoint<any, any, infer EndpointDef> ? EndpointDef : never
+}
 
 /**
  * Creates a type-safe API client from an API schema with automatic request/response validation,
@@ -140,7 +141,10 @@ export function createApiClient<T extends Record<string, unknown>>(args: {
     mergedEndpointMap[key] = e
   })
 
-  const requestApi = async (key: keyof ApiSchemaEndpoints<T> & string, data: Partial<ValidationTargets> | undefined = undefined) => {
+  const requestApi = async (
+    key: keyof ApiSchemaEndpoints<T> & string,
+    data: Partial<ValidationTargets> | undefined = undefined,
+  ): Promise<any> => {
     if (!key.startsWith('@')) {
       throw new ApiError(`Invalid endpoint key: ${key}. It should start with '@' followed by the HTTP method.`, 400)
     }

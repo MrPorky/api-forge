@@ -1,2 +1,2 @@
-export { authApiSchema } from './auth-schema'
-export { productApiSchema } from './products-schema'
+export * from './auth-schema'
+export * from './products-schema'

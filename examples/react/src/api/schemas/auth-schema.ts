@@ -77,7 +77,7 @@ if (import.meta.env.DEV) {
         token: jwt,
         user: newUser,
       }
-    }
+    },
   })
 
   signIn.defineMock({
@@ -97,7 +97,7 @@ if (import.meta.env.DEV) {
         token: jwt,
         user,
       }
-    }
+    },
   })
 
   signOut.defineMock({
@@ -122,7 +122,7 @@ if (import.meta.env.DEV) {
       }
 
       return { success: true }
-    }
+    },
   })
 
   getSession.defineMock({
@@ -150,7 +150,7 @@ if (import.meta.env.DEV) {
         session,
         user,
       }
-    }
+    },
   })
 
   async function createNewSession(honoContext: Context, mockContext: Map<string, unknown>, user: User) {

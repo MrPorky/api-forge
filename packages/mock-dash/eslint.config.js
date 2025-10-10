@@ -7,5 +7,6 @@ export default antfu({
   ignores: ['**/*gen.ts', 'examples/**/*'],
   rules: {
     'no-alert': 'off',
+    'ts/explicit-function-return-type': 'off',
   },
 })

@@ -32,8 +32,6 @@ export type CollectionMeta<T extends z.ZodType, K extends keyof z.infer<T>> = Co
   | CollectionGetMeta<T>
   | CollectionCreateMeta<T>
   | CollectionUpdateMeta<T, K>
-
-/** Map of collection name to definition */
 export interface CollectionDefinition<Z extends z.ZodType, K extends keyof z.infer<Z> = keyof z.infer<Z>> {
   size: number
   idKey: K

@@ -3,13 +3,13 @@ import { defineEndpoint } from 'mock-dash'
 import z from 'zod'
 import { productModel } from '@/models/product'
 
-export const getProducts = defineEndpoint("@get/products", {
+export const getProducts = defineEndpoint('@get/products', {
   response: z.array(productModel),
 })
 
 if (import.meta.env.DEV) {
   getProducts.defineMock(({
-    mockFn: ({response}) => ({
+    mockFn: ({ response }) => ({
       ...response,
       name: faker.commerce.productName(),
     }),
