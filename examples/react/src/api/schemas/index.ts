@@ -1,2 +1,2 @@
-export { authApiSchema } from './auth-schema'
-export { productApiSchema } from './products-schema'
+export { getSession, signIn, signOut, signUp } from './auth-schema'
+export { getProducts } from './products-schema'

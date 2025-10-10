@@ -1,17 +1,15 @@
 import z from 'zod'
-import { defineApiSchema } from '../api-schema-types'
+import { defineEndpoint } from '../endpoints'
 
-export const schema = defineApiSchema({
-  '@get/users': {
-    input: {
-      query: z.object({
-        page: z.string().optional(),
-        limit: z.string().optional(),
-      }),
+export const getUser = defineEndpoint('@get/users', {
+  input: {
+    query: {
+      page: z.string().optional(),
+      limit: z.string().optional(),
     },
-    response: z.array(z.object({
-      id: z.string(),
-      name: z.string(),
-    })),
   },
+  response: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+  })),
 })

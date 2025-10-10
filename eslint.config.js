@@ -1,8 +1,10 @@
 import antfu from '@antfu/eslint-config'
 
 export default antfu({
+  type: 'lib',
+  typescript: true,
   formatters: true,
-  ignores: ['**/*gen.ts'],
+  ignores: ['**/*gen.ts', 'examples/**/*'],
   rules: {
     'no-alert': 'off',
   },

@@ -1,5 +1,4 @@
 import type { AriaAttributes, FormEventHandler } from 'react'
-import type { authApiSchema } from '@/api/schemas/auth-schema'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { isValidationError } from 'mock-dash'
 import { useState } from 'react'
@@ -7,6 +6,7 @@ import z from 'zod'
 import { apiClient } from '@/api/api-client'
 import { CenterLayout } from '@/components/center-layout/center-layout'
 import { ErrorParagraph } from '@/components/error-paragraph/error-paragraph'
+import type { signIn } from '@/api/schemas/auth-schema'
 
 export const Route = createFileRoute('/signin')({
   component: RouteComponent,
@@ -15,7 +15,7 @@ export const Route = createFileRoute('/signin')({
   }),
 })
 
-type JSON = typeof authApiSchema.$inferInputJson['@post/auth/sign-in/email']
+type JSON = typeof signIn.$inferInputJson
 
 function RouteComponent() {
   const navigate = useNavigate()

@@ -1,23 +1,27 @@
 import type z from 'zod'
-import type { Endpoint, InputsWithParam } from './api-schema-types'
+import type { HttpMethodPath, InputsWithParams } from './common-types'
+import type { IEndpoint } from './endpoints'
 import type { EmptyObjectIsNever } from './type-utils'
 
-type ApiSchema = Record<string, Endpoint>
+type ApiSchema = Record<string, IEndpoint<HttpMethodPath, z.ZodType | z.ZodArray>>
 
 /**
  * Inferred argument tuple for a given endpoint key. Empty input => no arg required.
  */
-export type Args<T extends ApiSchema, K extends keyof T> = T[K] extends Endpoint
-  ? EmptyObjectIsNever<InputsWithParam<T[K]['input'], K & string>> extends never
-    ? []
-    : [data: InputsWithParam<T[K]['input'], K & string>]
-  : never
+export type Args<T extends ApiSchema, K extends keyof T>
+  = K extends HttpMethodPath
+    ? T[K] extends IEndpoint<K, T[K]['response']>
+      ? EmptyObjectIsNever<InputsWithParams<K, T[K]['input']>> extends never
+        ? []
+        : [data: InputsWithParams<K, T[K]['input']>]
+      : never
+    : never
 
 /** Core callable signature for the generated API client */
 export type ClientFn<T extends ApiSchema> = <K extends keyof T>(
   key: K,
   ...args: Args<T, K>
-) => T[K] extends Endpoint ? Promise<z.infer<T[K]['response']>> : never
+) => T[K] extends IEndpoint<HttpMethodPath, z.ZodType | z.ZodArray> ? Promise<z.infer<T[K]['response']>> : never
 
 /** Runtime context passed to interceptor callbacks */
 export interface InterceptorContext<T extends ApiSchema, K extends keyof T = keyof T> {

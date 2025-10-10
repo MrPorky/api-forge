@@ -1,20 +1,15 @@
 import type { ValidationTargets } from 'hono'
-import type { Endpoint } from './api-schema-types'
-import type {
-  Args,
-  Client,
-  ClientProperties,
-  FetchOptions,
-  InterceptorCallback,
-  InterceptorContext,
-} from './client-types'
-import { EndpointMap, httpMethodSchema } from './api-schema-types'
+import type { Args, Client, ClientProperties, FetchOptions, InterceptorCallback, InterceptorContext } from './client-types'
+import type { Endpoint, IEndpoint } from './endpoints'
+import z from 'zod'
 import { InterceptorManager } from './client-types'
+import { httpMethodSchema } from './common-types'
+import { isEndpoint } from './endpoints'
 import { ApiError, NetworkError, ValidationError } from './errors'
 import { buildFormData, serializeQueryParams } from './request-utils'
 
 type ApiSchemaEndpoints<T extends Record<string, unknown>> = {
-  [K in keyof T]: T[K] extends EndpointMap<infer E> ? E : never
+  [Key in keyof T]: T[Key] extends Endpoint<infer K, z.ZodType | z.ZodArray, infer E> ? Record<K, E> : never
 }[keyof T]
 
 /**
@@ -135,15 +130,14 @@ export function createApiClient<T extends Record<string, unknown>>(args: {
     overrides: {},
   }
 
-  const mergedEndpointMap: Record<string, Endpoint> = {}
+  const mergedEndpointMap: Record<string, IEndpoint<`@post/${string}`, z.ZodType | z.ZodArray>> = {}
   Object.values(apiSchema).forEach((endpoint) => {
-    if (!(endpoint instanceof EndpointMap)) {
+    if (!(isEndpoint(endpoint))) {
       return
     }
 
-    Object.entries((endpoint as EndpointMap<Record<string, Endpoint>>).getAllEndpoints()).forEach(([key, ep]) => {
-      mergedEndpointMap[key] = ep
-    })
+    const [key, e] = endpoint.getEntry()
+    mergedEndpointMap[key] = e
   })
 
   const requestApi = async (key: keyof ApiSchemaEndpoints<T> & string, data: Partial<ValidationTargets> | undefined = undefined) => {
@@ -210,7 +204,7 @@ export function createApiClient<T extends Record<string, unknown>>(args: {
       for (const [inputType, schema] of Object.entries(endpoint.input)) {
         const inputData = data[inputType as keyof ValidationTargets]
         if (inputData !== undefined) {
-          const validationResult = schema.safeParse(inputData)
+          const validationResult = (schema instanceof z.ZodType ? schema : z.object(schema)).safeParse(inputData)
           if (!validationResult.success) {
             throw new ValidationError(
               `Request validation failed for ${inputType}`,

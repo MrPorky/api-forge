@@ -1,56 +1,56 @@
 import type { Session } from '$lib/models/session'
 import type { User } from '$lib/models/user'
 import type { Context } from 'hono'
-import { dev } from '$app/environment'
 import { sessionModel } from '$lib/models/session'
 import { userModel } from '$lib/models/user'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import { sign } from 'hono/jwt'
-import { defineApiSchema, MockError } from 'mock-dash'
+import { defineEndpoint, MockError } from 'mock-dash'
 import z from 'zod'
 
-export const authApiSchema = defineApiSchema({
-  '@post/auth/sign-up/email': {
-    input: {
-      json: z.object({
-        name: z.string(), // required
-        email: z.email(), // required
-        password: z.string(), // required
-        image: z.url().optional(), // optional
-        callbackURL: z.string().optional(), // optional
-      }),
-    },
-    response: z.object({
-      token: z.string(),
-      user: userModel,
+export const signUp = defineEndpoint('@post/auth/sign-up/email', {
+  input: {
+    json: z.object({
+      name: z.string(), // required
+      email: z.email(), // required
+      password: z.string(), // required
+      image: z.url().optional(), // optional
+      callbackURL: z.string().optional(), // optional
     }),
   },
-  '@post/auth/sign-in/email': {
-    input: {
-      json: z.object({
-        email: z.email(), // required
-        password: z.string(), // required
-        rememberMe: z.boolean().optional(), // optional
-        callbackURL: z.string().optional(), // optional
-      }),
-    },
-    response: z.object({
-      redirect: z.boolean(),
-      token: z.string(),
-      user: userModel,
-    }),
-  },
-  '@post/auth/sign-out': {
-    response: z.object({ success: z.boolean() }),
-  },
-  '@get/get-session': {
-    response: sessionModel,
-  },
+  response: z.object({
+    token: z.string(),
+    user: userModel,
+  }),
 })
 
-if (dev) {
-  authApiSchema.defineMock({
-    '@post/auth/sign-up/email': async ({ honoContext, inputs, mockContext }) => {
+export const signIn = defineEndpoint('@post/auth/sign-in/email', {
+  input: {
+    json: z.object({
+      email: z.email(), // required
+      password: z.string(), // required
+      rememberMe: z.boolean().optional(), // optional
+      callbackURL: z.string().optional(), // optional
+    }),
+  },
+  response: z.object({
+    redirect: z.boolean(),
+    token: z.string(),
+    user: userModel,
+  }),
+})
+
+export const signOut = defineEndpoint('@post/auth/sign-out', {
+  response: z.object({ success: z.boolean() }),
+})
+
+export const getSession = defineEndpoint('@get/get-session', {
+  response: sessionModel,
+})
+
+if (import.meta.env.DEV) {
+  signUp.defineMock({
+    mockFn: async ({ honoContext, inputs, mockContext }) => {
       const user = mockContext.get(`user.${inputs.json.email}`)
 
       if (user) {
@@ -78,7 +78,10 @@ if (dev) {
         user: newUser,
       }
     },
-    '@post/auth/sign-in/email': async ({ honoContext, inputs, mockContext }) => {
+  })
+
+  signIn.defineMock({
+    mockFn: async ({ honoContext, inputs, mockContext }) => {
       const password = mockContext.get(`user.${inputs.json.email}.pass`)
 
       if (password === undefined || inputs.json.password === password) {
@@ -95,7 +98,10 @@ if (dev) {
         user,
       }
     },
-    '@post/auth/sign-out': ({ honoContext, mockContext }) => {
+  })
+
+  signOut.defineMock({
+    mockFn: ({ honoContext, mockContext }) => {
       const userParseResult = userModel.safeParse(honoContext.get('jwtPayload'))
       const jwt = getCookie(honoContext, 'jwt')
       deleteCookie(honoContext, 'jwt')
@@ -117,7 +123,10 @@ if (dev) {
 
       return { success: true }
     },
-    '@get/get-session': ({ honoContext, mockContext }) => {
+  })
+
+  getSession.defineMock({
+    mockFn: ({ honoContext, mockContext }) => {
       const userParseResult = userModel.safeParse(honoContext.get('jwtPayload'))
 
       if (!userParseResult.success) {

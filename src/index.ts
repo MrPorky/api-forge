@@ -1,7 +1,7 @@
-export {
-  defineApiSchema,
-} from './api-schema-types'
 export { createApiClient } from './create-api-client'
+export {
+  defineEndpoint,
+} from './endpoints'
 export {
   isApiError,
   isMockError,
