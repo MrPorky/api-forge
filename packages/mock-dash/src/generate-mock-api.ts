@@ -5,7 +5,7 @@ import { Hono } from 'hono'
 import z from 'zod'
 import { Collection } from './collections'
 import { httpMethodSchema } from './common-types'
-import { isEndpoint } from './endpoints'
+import { isEndpoint, isEndpoints } from './endpoints'
 import { MockError } from './errors'
 
 export type FakeFn = <T extends z.ZodType>(schema: T) => T['_zod']['output']
@@ -131,18 +131,7 @@ export function generateMockApi<T extends Record<string, unknown>>(apiSchema: T,
 
   options.addMiddleware?.(app)
 
-  for (const apiDefinition of Object.values(apiSchema)) {
-    if (apiDefinition instanceof Collection) {
-      apiDefinition.initialize(fake)
-      continue
-    }
-
-    if (!isEndpoint(apiDefinition)) {
-      continue
-    }
-
-    const [key, endpoint, mock] = apiDefinition.getEntry()
-
+  function processEndpoint(key: string, endpoint: any, mock: any) {
     if (key.startsWith('@')) {
       const parts = key.split('/')
       const httpMethodPart = parts[0].replace('@', '')
@@ -156,7 +145,7 @@ export function generateMockApi<T extends Record<string, unknown>>(apiSchema: T,
       const inputvalidators = endpoint.input
         ? Object.entries(endpoint.input)
             .map(([target, zodType]) =>
-              zValidator(target as keyof ValidationTargets, zodType instanceof z.ZodType ? zodType : z.object(zodType)))
+              zValidator(target as keyof ValidationTargets, zodType instanceof z.ZodType ? zodType : z.object(zodType as any)))
         : []
 
       app[method](path, ...inputvalidators, async (c) => {
@@ -167,44 +156,29 @@ export function generateMockApi<T extends Record<string, unknown>>(apiSchema: T,
           param: c.req.param(),
         }
 
-        let mockData = fake(endpoint.response)
+        let mockData: unknown
         const customFaker = mock?.mockFn
 
         try {
-          if (customFaker) {
+          if (!customFaker) {
+            mockData = fake(endpoint.response)
+          }
+          else {
             const fakerContext = {
-              response: mockData,
               mockContext,
               inputs,
               honoContext: c,
-            } satisfies EndpointInputContext<
-              typeof key,
-              typeof endpoint.response,
-              any
-            >
+            } satisfies EndpointInputContext<any, any>
 
             if (typeof customFaker === 'function') {
-              const fakerData = await Promise.resolve(customFaker(fakerContext))
-
-              if (Array.isArray(mockData) && Array.isArray(fakerData)) {
-                mockData = [...(mockData), ...(fakerData)]
-              }
-              else if (mockData && typeof mockData === 'object' && fakerData && typeof fakerData === 'object') {
-                mockData = { ...(mockData), ...(fakerData) }
-              }
-              else {
-                mockData = fakerData
-              }
+              mockData = await Promise.resolve(customFaker(fakerContext))
             }
             else {
               const { length, min, max, faker: itemFaker } = customFaker
 
-              let fakerData: unknown[] = []
-
               if (length !== undefined) {
-                fakerData = await Promise.all(
+                mockData = await Promise.all(
                   Array.from({ length }, async (_, i) =>
-                    // @ts-expect-error - Need to figure out how to narrow this type properly
                     await Promise.resolve(itemFaker(fakerContext, i))),
                 )
               }
@@ -212,14 +186,10 @@ export function generateMockApi<T extends Record<string, unknown>>(apiSchema: T,
                 const actualMin = min ?? 0
                 const actualMax = max ?? actualMin + 10
                 const randomLength = Math.floor(Math.random() * (actualMax - actualMin + 1)) + actualMin
-                fakerData = await Promise.all(
-                  Array.from({ length: randomLength },
-                    // @ts-expect-error - Need to figure out how to narrow this type properly
-                    async (_, i) => await Promise.resolve(itemFaker(fakerContext, i))),
+                mockData = await Promise.all(
+                  Array.from({ length: randomLength }, async (_, i) => await Promise.resolve(itemFaker(fakerContext, i))),
                 )
               }
-
-              mockData = fakerData
             }
           }
         }
@@ -234,6 +204,29 @@ export function generateMockApi<T extends Record<string, unknown>>(apiSchema: T,
 
         return c.json(mockData as Record<string, unknown>)
       })
+    }
+  }
+
+  for (const apiDefinition of Object.values(apiSchema)) {
+    if (apiDefinition instanceof Collection) {
+      apiDefinition.initialize(fake)
+      continue
+    }
+
+    // Handle individual Endpoint instances
+    if (isEndpoint(apiDefinition)) {
+      const [key, endpoint, mock] = apiDefinition.getEntry()
+      processEndpoint(key, endpoint, mock)
+      continue
+    }
+
+    // Handle Endpoints class instances (plural API)
+    if (isEndpoints(apiDefinition)) {
+      const entries = apiDefinition.getEntries()
+      for (const [key, endpoint, mock] of entries) {
+        processEndpoint(key, endpoint, mock)
+      }
+      continue
     }
   }
 

@@ -20,10 +20,14 @@ export type EmptyObjectIsNever<T> = keyof T extends never ? never : T
 
 export type MaybePromise<T> = T | Promise<T>
 
-export type Merge<A extends object, B extends object> = {
-  [K in keyof A | keyof B]: K extends keyof B
-    ? B[K]
-    : K extends keyof A
-      ? A[K]
-      : never
-}
+export type Merge<A extends object, B extends object>
+  = {
+    [K in keyof A | keyof B]: K extends keyof B
+      ? B[K]
+      : K extends keyof A
+        ? A[K]
+        : never
+  }
+
+export type UnionToIntersection<U>
+  = (U extends any ? (x: U) => void : never) extends ((x: infer I) => void) ? I : never

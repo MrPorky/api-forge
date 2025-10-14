@@ -1,3 +1,4 @@
+import { dev } from '$app/environment'
 import { productModel } from '$lib/models/product'
 import { faker } from '@faker-js/faker'
 import { defineEndpoint } from 'mock-dash'
@@ -7,11 +8,16 @@ export const getProducts = defineEndpoint('@get/products', {
   response: z.array(productModel),
 })
 
-if (import.meta.env.DEV) {
+if (dev) {
   getProducts.defineMock(({
-    mockFn: ({ response }) => ({
-      ...response,
-      name: faker.commerce.productName(),
-    }),
+    mockFn: {
+      length: 5,
+      faker: () => ({
+        id: faker.string.uuid(),
+        name: faker.commerce.productName(),
+        price: Number(faker.commerce.price()),
+        description: faker.commerce.productDescription(),
+      }),
+    },
   }))
 }

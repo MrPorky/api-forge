@@ -4,8 +4,7 @@ import type { HttpMethodPath, InputsWithParams } from './common-types'
 import type { EndpointInput } from './endpoints'
 import type { MaybePromise } from './type-utils'
 
-export interface EndpointInputContext<K extends HttpMethodPath, R extends z.ZodType, I extends EndpointInput<K> | undefined> {
-  response: z.infer<R>
+export interface EndpointInputContext<K extends HttpMethodPath, I extends EndpointInput<K> | undefined> {
   inputs: InputsWithParams<K, I>
   mockContext: Map<string, unknown>
   honoContext: Context<Env, `${string}/${string}`, {
@@ -14,19 +13,19 @@ export interface EndpointInputContext<K extends HttpMethodPath, R extends z.ZodT
   }>
 }
 
-interface MockArraySpec<K extends HttpMethodPath, R extends z.ZodType, I extends EndpointInput<K> | undefined> {
+interface MockArraySpec<K extends HttpMethodPath, R extends z.ZodArray<z.ZodType>, I extends EndpointInput<K> | undefined> {
   length?: number
   min?: number
   max?: number
-  faker: (c: EndpointInputContext<K, R, I>, index: number) => MaybePromise<z.infer<R>>
+  faker: (c: EndpointInputContext<K, I>, index: number) => MaybePromise<z.infer<R['element']>>
 }
 
 export interface MockFn<K extends HttpMethodPath, R extends z.ZodType, I extends EndpointInput<K> | undefined> {
-  (c: EndpointInputContext<K, R, I>): MaybePromise<z.infer<R>>
+  (c: EndpointInputContext<K, I>): MaybePromise<z.infer<R>>
 }
 
 export type ApiResponseGenerator<K extends HttpMethodPath, R extends z.ZodType, I extends EndpointInput<K> | undefined>
-  = R extends z.ZodArray
+  = R extends z.ZodArray<z.ZodType>
     ? (MockArraySpec<K, R, I> | MockFn<K, R, I>)
     : MockFn<K, R, I>
 

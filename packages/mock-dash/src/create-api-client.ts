@@ -1,17 +1,12 @@
 import type { ValidationTargets } from 'hono'
-import type { Args, Client, ClientProperties, FetchOptions, InterceptorCallback, InterceptorContext } from './client-types'
-import type { Endpoint, IEndpoint } from './endpoints'
+import type { ApiSchemaEndpoints, Args, Client, ClientProperties, FetchOptions, InterceptorCallback, InterceptorContext } from './client-types'
+import type { IEndpoint } from './endpoints'
 import z from 'zod'
 import { InterceptorManager } from './client-types'
 import { httpMethodSchema } from './common-types'
-import { isEndpoint } from './endpoints'
+import { isEndpoint, isEndpoints } from './endpoints'
 import { ApiError, NetworkError, ValidationError } from './errors'
 import { buildFormData, serializeQueryParams } from './request-utils'
-
-type ApiSchemaEndpoints<T extends Record<string, unknown>> = {
-  [K in keyof T as T[K] extends Endpoint<infer EndpointKey, any, any> ? EndpointKey : never]:
-  T[K] extends Endpoint<any, any, infer EndpointDef> ? EndpointDef : never
-}
 
 /**
  * Creates a type-safe API client from an API schema with automatic request/response validation,
@@ -132,13 +127,21 @@ export function createApiClient<T extends Record<string, unknown>>(args: {
   }
 
   const mergedEndpointMap: Record<string, IEndpoint<`@post/${string}`, z.ZodType | z.ZodArray>> = {}
-  Object.values(apiSchema).forEach((endpoint) => {
-    if (!(isEndpoint(endpoint))) {
-      return
+
+  Object.values(apiSchema).forEach((apiDefinition) => {
+    // Handle individual Endpoint instances
+    if (isEndpoint(apiDefinition)) {
+      const [key, e] = apiDefinition.getEntry()
+      mergedEndpointMap[key] = e
     }
 
-    const [key, e] = endpoint.getEntry()
-    mergedEndpointMap[key] = e
+    // Handle Endpoints class instances (plural API)
+    if (isEndpoints(apiDefinition)) {
+      const entries = apiDefinition.getEntries()
+      for (const [key, endpoint] of entries) {
+        mergedEndpointMap[key] = endpoint
+      }
+    }
   })
 
   const requestApi = async (

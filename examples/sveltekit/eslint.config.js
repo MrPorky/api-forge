@@ -6,4 +6,5 @@ export default antfu({
   rules: {
     'no-alert': 'off',
   },
+  ignores: ['node_modules/**'],
 })

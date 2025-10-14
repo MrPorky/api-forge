@@ -1,9 +1,26 @@
 import type z from 'zod'
 import type { HttpMethodPath, InputsWithParams } from './common-types'
-import type { IEndpoint } from './endpoints'
-import type { EmptyObjectIsNever } from './type-utils'
+import type { Endpoint, Endpoints, IEndpoint } from './endpoints'
+import type { EmptyObjectIsNever, UnionToIntersection } from './type-utils'
 
 type ApiSchema = Record<string, IEndpoint<HttpMethodPath, z.ZodType | z.ZodArray>>
+
+type FlattenEndpointsToUnion<T> = {
+  [K in keyof T]: T[K] extends Endpoint<infer EndpointKey, any, any>
+    ? { [P in EndpointKey]: T[K] extends Endpoint<any, any, infer EndpointDef> ? EndpointDef : never }
+    : T[K] extends Endpoints<infer EndpointsType>
+      ? { [P in keyof EndpointsType]: EndpointsType[P] extends IEndpoint<HttpMethodPath, z.ZodType | z.ZodArray> ? EndpointsType[P] : never }
+      : never
+}[keyof T]
+
+type FlattenEndpoints<T>
+  = UnionToIntersection<FlattenEndpointsToUnion<T>> extends infer Result
+    ? Result extends ApiSchema
+      ? Result
+      : Record<string, never>
+    : Record<string, never>
+
+export type ApiSchemaEndpoints<T extends Record<string, unknown>> = FlattenEndpoints<T>
 
 /**
  * Inferred argument tuple for a given endpoint key. Empty input => no arg required.

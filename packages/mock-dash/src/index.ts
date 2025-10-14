@@ -1,6 +1,11 @@
 export { createApiClient } from './create-api-client'
 export {
   defineEndpoint,
+  defineEndpoints,
+  Endpoint,
+  Endpoints,
+  isEndpoint,
+  isEndpoints,
 } from './endpoints'
 export {
   isApiError,

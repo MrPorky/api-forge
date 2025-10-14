@@ -9,9 +9,14 @@ export const getProducts = defineEndpoint('@get/products', {
 
 if (import.meta.env.DEV) {
   getProducts.defineMock(({
-    mockFn: ({ response }) => ({
-      ...response,
-      name: faker.commerce.productName(),
-    }),
+    mockFn: {
+      length: 5,
+      faker: () => ({
+        id: faker.string.uuid(),
+        name: faker.commerce.productName(),
+        price: Number(faker.commerce.price()),
+        description: faker.commerce.productDescription(),
+      }),
+    },
   }))
 }
