@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build && tsc -b",
     "clean": "rm -rf dist node_modules stats.html",
     "lint": "eslint src",
     "check": "tsc --noEmit"
