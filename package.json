@@ -7,6 +7,7 @@
     "build": "pnpm -r build",
     "clean": "pnpm -r clean",
     "test": "pnpm -r test",
+    "test:coverage": "pnpm -r test:coverage",
     "lint": "pnpm -r lint",
     "check": "pnpm -r check",
     "dev:react": "pnpm --filter react-example dev",
