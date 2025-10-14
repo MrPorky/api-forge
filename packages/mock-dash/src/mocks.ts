@@ -21,7 +21,7 @@ interface MockArraySpec<K extends HttpMethodPath, R extends z.ZodArray<z.ZodType
 }
 
 export interface MockFn<K extends HttpMethodPath, R extends z.ZodType, I extends EndpointInput<K> | undefined> {
-  (c: EndpointInputContext<K, I>): MaybePromise<z.infer<R>>
+  (c: EndpointInputContext<K, I>): MaybePromise<z.infer<R> | Response>
 }
 
 export type ApiResponseGenerator<K extends HttpMethodPath, R extends z.ZodType, I extends EndpointInput<K> | undefined>

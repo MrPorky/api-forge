@@ -1,5 +1,8 @@
 import type { ValidationTargets } from 'hono'
-import type { EndpointInputContext } from './mocks'
+import type { ZodArray } from 'zod'
+import type { HttpMethodPath } from './common-types'
+import type { IEndpoint } from './endpoints'
+import type { EndpointInputContext, IMock } from './mocks'
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import z from 'zod'
@@ -131,7 +134,7 @@ export function generateMockApi<T extends Record<string, unknown>>(apiSchema: T,
 
   options.addMiddleware?.(app)
 
-  function processEndpoint(key: string, endpoint: any, mock: any) {
+  function processEndpoint(key: string, endpoint: IEndpoint<HttpMethodPath, z.ZodType>, mock?: IMock<HttpMethodPath, z.ZodType | ZodArray<z.ZodType>, any>) {
     if (key.startsWith('@')) {
       const parts = key.split('/')
       const httpMethodPart = parts[0].replace('@', '')
@@ -168,7 +171,7 @@ export function generateMockApi<T extends Record<string, unknown>>(apiSchema: T,
               mockContext,
               inputs,
               honoContext: c,
-            } satisfies EndpointInputContext<any, any>
+            } satisfies EndpointInputContext<HttpMethodPath, any>
 
             if (typeof customFaker === 'function') {
               mockData = await Promise.resolve(customFaker(fakerContext))
@@ -202,7 +205,12 @@ export function generateMockApi<T extends Record<string, unknown>>(apiSchema: T,
           throw error
         }
 
-        return c.json(mockData as Record<string, unknown>)
+        if (mockData instanceof Response) {
+          return mockData
+        }
+        else {
+          return c.json(mockData)
+        }
       })
     }
   }
