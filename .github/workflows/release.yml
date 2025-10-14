@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - packages/mock-dash/package.json
+  workflow_dispatch:
 
 jobs:
   release:
