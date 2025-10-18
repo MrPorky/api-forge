@@ -1,7 +1,7 @@
 import type { FakeFn, MockGenerationOptions } from '../generate-mock-api'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
-import { defineApiSchema } from '../api-schema-types'
+import { defineEndpoint } from '../endpoints'
 import { MockError } from '../errors'
 import { generateMockApi } from '../generate-mock-api'
 
@@ -14,11 +14,11 @@ describe('generate-mock-api unit tests', () => {
 
   describe('generateMockApi function', () => {
     it('should return app and mockContext', () => {
-      const schema = defineApiSchema({
-        '@get/users': {
+      const schema = {
+        getUsers: defineEndpoint('@get/users', {
           response: z.object({ id: z.string(), name: z.string() }),
-        },
-      })
+        }),
+      }
 
       const result = generateMockApi(schema, mockFaker)
 
@@ -31,8 +31,7 @@ describe('generate-mock-api unit tests', () => {
     })
 
     it('should create empty app when no endpoints provided', () => {
-      const schema = defineApiSchema({})
-      const result = generateMockApi(schema, mockFaker)
+      const result = generateMockApi({}, mockFaker)
 
       expect(result.app).toBeDefined()
       expect(typeof result.app.get).toBe('function')
@@ -40,14 +39,15 @@ describe('generate-mock-api unit tests', () => {
     })
 
     it('should skip non-endpoint keys', () => {
-      const schema = {
-        '@get/users': {
+      const schema = ({
+        getUsers: defineEndpoint('@get/users', {
           response: z.object({ id: z.string() }),
-        },
-        'notAnEndpoint': {
+        }),
+        // @ts-expect-error Testing invalid key
+        notAnEndpoint: defineEndpoint('not-an-endpoint', {
           response: z.object({ data: z.string() }),
-        },
-      }
+        }),
+      })
 
       const result = generateMockApi(schema, mockFaker)
       expect(result.app).toBeDefined()
@@ -55,35 +55,47 @@ describe('generate-mock-api unit tests', () => {
     })
   })
 
-  describe('hTTP method parsing', () => {
+  describe('http method parsing', () => {
     it('should handle all valid HTTP methods', () => {
-      const schema = defineApiSchema({
-        '@get/test': { response: z.object({ method: z.string() }) },
-        '@post/test': { response: z.object({ method: z.string() }) },
-        '@put/test': { response: z.object({ method: z.string() }) },
-        '@patch/test': { response: z.object({ method: z.string() }) },
-        '@delete/test': { response: z.object({ method: z.string() }) },
+      const schema = ({
+        getTest: defineEndpoint('@get/test', {
+          response: z.object({ method: z.string() }),
+        }),
+        postTest: defineEndpoint('@post/test', {
+          response: z.object({ method: z.string() }),
+        }),
+        putTest: defineEndpoint('@put/test', {
+          response: z.object({ method: z.string() }),
+        }),
+        patchTest: defineEndpoint('@patch/test', {
+          response: z.object({ method: z.string() }),
+        }),
+        deleteTest: defineEndpoint('@delete/test', {
+          response: z.object({ method: z.string() }),
+        }),
       })
 
       expect(() => generateMockApi(schema, mockFaker)).not.toThrow()
     })
 
     it('should throw error for invalid HTTP method', () => {
-      const schema = {
-        '@invalid/test': {
+      const schema = ({
+        // @ts-expect-error Testing invalid key
+        invalidTest: defineEndpoint('@invalid/test', {
           response: z.object({ data: z.string() }),
-        },
-      }
+        }),
+      })
 
       expect(() => generateMockApi(schema, mockFaker)).toThrow('invalid is not a valid HTTP method.')
     })
 
     it('should handle method case sensitivity', () => {
-      const schema = {
-        '@GET/test': {
+      const schema = ({
+        // @ts-expect-error Testing invalid key
+        invalidTest: defineEndpoint('@GET/test', {
           response: z.object({ data: z.string() }),
-        },
-      }
+        }),
+      })
 
       expect(() => generateMockApi(schema, mockFaker)).toThrow('GET is not a valid HTTP method.')
     })
@@ -91,46 +103,46 @@ describe('generate-mock-api unit tests', () => {
 
   describe('path parsing', () => {
     it('should handle simple paths', () => {
-      const schema = defineApiSchema({
-        '@get/users': {
+      const schema = ({
+        getUsers: defineEndpoint('@get/users', {
           response: z.object({ id: z.string() }),
-        },
+        }),
       })
 
       expect(() => generateMockApi(schema, mockFaker)).not.toThrow()
     })
 
     it('should handle nested paths', () => {
-      const schema = defineApiSchema({
-        '@get/api/v1/users/profile': {
+      const schema = ({
+        getUserProfile: defineEndpoint('@get/api/v1/users/profile', {
           response: z.object({ id: z.string() }),
-        },
+        }),
       })
 
       expect(() => generateMockApi(schema, mockFaker)).not.toThrow()
     })
 
     it('should handle paths with parameters', () => {
-      const schema = defineApiSchema({
-        '@get/users/:id/posts/:postId': {
+      const schema = ({
+        getUserPosts: defineEndpoint('@get/users/:id/posts/:postId', {
           input: {
-            param: z.object({
+            param: ({
               id: z.string(),
               postId: z.string(),
             }),
           },
           response: z.object({ id: z.string() }),
-        },
+        }),
       })
 
       expect(() => generateMockApi(schema, mockFaker)).not.toThrow()
     })
 
     it('should handle root path', () => {
-      const schema = defineApiSchema({
-        '@get/': {
+      const schema = ({
+        getRoot: defineEndpoint('@get/', {
           response: z.object({ message: z.string() }),
-        },
+        }),
       })
 
       expect(() => generateMockApi(schema, mockFaker)).not.toThrow()
@@ -139,42 +151,41 @@ describe('generate-mock-api unit tests', () => {
 
   describe('input validation setup', () => {
     it('should handle endpoints without input validation', () => {
-      const schema = defineApiSchema({
-        '@get/users': {
+      const schema = ({
+        getUsers: defineEndpoint('@get/users', {
           response: z.object({ id: z.string() }),
-        },
+        }),
       })
 
       expect(() => generateMockApi(schema, mockFaker)).not.toThrow()
     })
 
     it('should setup validators for all input types', () => {
-      const schema = defineApiSchema({
-        '@post/users': {
+      const schema = ({
+        postUsers: defineEndpoint('@post/users', {
           input: {
             json: z.object({ name: z.string() }),
-            query: z.object({ include: z.string().optional() }),
-            param: z.object({ id: z.string() }),
-            header: z.object({ authorization: z.string() }),
+            query: ({ include: z.string().optional() }),
+            param: ({ id: z.string() }),
           },
           response: z.object({ id: z.string() }),
-        },
+        }),
       })
 
       expect(() => generateMockApi(schema, mockFaker)).not.toThrow()
     })
 
     it('should handle form input validation', () => {
-      const schema = defineApiSchema({
-        '@post/upload': {
+      const schema = ({
+        postUpload: defineEndpoint('@post/upload', {
           input: {
-            form: z.object({
+            form: ({
               name: z.string(),
               description: z.string().optional(),
             }),
           },
           response: z.object({ id: z.string() }),
-        },
+        }),
       })
 
       expect(() => generateMockApi(schema, mockFaker)).not.toThrow()
@@ -183,8 +194,8 @@ describe('generate-mock-api unit tests', () => {
 
   describe('options handling', () => {
     it('should use default base path when not provided', () => {
-      const schema = defineApiSchema({
-        '@get/test': { response: z.object({ data: z.string() }) },
+      const schema = ({
+        getTest: defineEndpoint('@get/test', { response: z.object({ data: z.string() }) }),
       })
 
       const result = generateMockApi(schema, mockFaker)
@@ -193,22 +204,22 @@ describe('generate-mock-api unit tests', () => {
     })
 
     it('should apply custom base path', () => {
-      const schema = defineApiSchema({
-        '@get/test': { response: z.object({ data: z.string() }) },
+      const schema = ({
+        getTest: defineEndpoint('@get/test', { response: z.object({ data: z.string() }) }),
       })
 
       const options: MockGenerationOptions = {
         base: '/api/v1',
       }
 
-      const result = generateMockApi(schema, mockFaker, options)
+      const result = generateMockApi({ schema }, mockFaker, options)
       expect(result.app).toBeDefined()
       expect(typeof result.app.get).toBe('function')
     })
 
     it('should call addMiddleware when provided', () => {
-      const schema = defineApiSchema({
-        '@get/test': { response: z.object({ data: z.string() }) },
+      const schema = ({
+        getTest: defineEndpoint('@get/test', { response: z.object({ data: z.string() }) }),
       })
 
       const middlewareSpy = vi.fn()
@@ -225,8 +236,8 @@ describe('generate-mock-api unit tests', () => {
     })
 
     it('should handle empty options object', () => {
-      const schema = defineApiSchema({
-        '@get/test': { response: z.object({ data: z.string() }) },
+      const schema = ({
+        getTest: defineEndpoint('@get/test', { response: z.object({ data: z.string() }) }),
       })
 
       expect(() => generateMockApi(schema, mockFaker, {})).not.toThrow()
@@ -235,10 +246,10 @@ describe('generate-mock-api unit tests', () => {
 
   describe('custom faker handling', () => {
     it('should use default faker when no custom faker provided', () => {
-      const schema = defineApiSchema({
-        '@get/users': {
+      const schema = ({
+        getUsers: defineEndpoint('@get/users', {
           response: z.object({ id: z.string(), name: z.string() }),
-        },
+        }),
       })
 
       const result = generateMockApi(schema, mockFaker)
@@ -249,10 +260,10 @@ describe('generate-mock-api unit tests', () => {
     it('should handle function-based custom faker', () => {
       const customFaker = vi.fn().mockResolvedValue({ id: 'custom', name: 'Custom User' })
       const schema = {
-        '@get/users': {
+        getUsers: defineEndpoint('@get/users', {
           response: z.object({ id: z.string(), name: z.string() }),
           faker: customFaker,
-        },
+        }),
       }
 
       expect(() => generateMockApi(schema, mockFaker)).not.toThrow()
@@ -261,13 +272,13 @@ describe('generate-mock-api unit tests', () => {
     it('should handle array faker with length specification', () => {
       const itemFaker = vi.fn().mockImplementation((_, index) => ({ id: `user-${index}` }))
       const schema = {
-        '@get/users': {
+        getUsers: defineEndpoint('@get/users', {
           response: z.array(z.object({ id: z.string() })),
           faker: {
             length: 5,
             faker: itemFaker,
           },
-        },
+        }),
       }
 
       expect(() => generateMockApi(schema, mockFaker)).not.toThrow()
@@ -276,14 +287,14 @@ describe('generate-mock-api unit tests', () => {
     it('should handle array faker with min/max specification', () => {
       const itemFaker = vi.fn().mockImplementation((_, index) => ({ id: `user-${index}` }))
       const schema = {
-        '@get/users': {
+        getUsers: defineEndpoint('@get/users', {
           response: z.array(z.object({ id: z.string() })),
           faker: {
             min: 2,
             max: 10,
             faker: itemFaker,
           },
-        },
+        }),
       }
 
       expect(() => generateMockApi(schema, mockFaker)).not.toThrow()
@@ -292,13 +303,13 @@ describe('generate-mock-api unit tests', () => {
     it('should handle array faker with only min specified', () => {
       const itemFaker = vi.fn().mockImplementation((_, index) => ({ id: `user-${index}` }))
       const schema = {
-        '@get/users': {
+        getUsers: defineEndpoint('@get/users', {
           response: z.array(z.object({ id: z.string() })),
           faker: {
             min: 3,
             faker: itemFaker,
           },
-        },
+        }),
       }
 
       expect(() => generateMockApi(schema, mockFaker)).not.toThrow()
@@ -307,13 +318,13 @@ describe('generate-mock-api unit tests', () => {
     it('should handle array faker with only max specified', () => {
       const itemFaker = vi.fn().mockImplementation((_, index) => ({ id: `user-${index}` }))
       const schema = {
-        '@get/users': {
+        getUsers: defineEndpoint('@get/users', {
           response: z.array(z.object({ id: z.string() })),
           faker: {
             max: 5,
             faker: itemFaker,
           },
-        },
+        }),
       }
 
       expect(() => generateMockApi(schema, mockFaker)).not.toThrow()
@@ -326,10 +337,10 @@ describe('generate-mock-api unit tests', () => {
       const customFaker = vi.fn().mockResolvedValue([{ id: '3' }, { id: '4' }])
 
       const schema = {
-        '@get/users': {
+        getUsers: defineEndpoint('@get/users', {
           response: z.array(z.object({ id: z.string() })),
           faker: customFaker,
-        },
+        }),
       }
 
       expect(() => generateMockApi(schema, arrayMockFaker)).not.toThrow()
@@ -340,10 +351,10 @@ describe('generate-mock-api unit tests', () => {
       const customFaker = vi.fn().mockResolvedValue({ name: 'Custom', email: 'test@example.com' })
 
       const schema = {
-        '@get/user': {
+        getUser: defineEndpoint('@get/user', {
           response: z.object({ id: z.string(), name: z.string(), email: z.string().optional() }),
           faker: customFaker,
-        },
+        }),
       }
 
       expect(() => generateMockApi(schema, objectMockFaker)).not.toThrow()
@@ -354,13 +365,13 @@ describe('generate-mock-api unit tests', () => {
       const customFaker = vi.fn().mockResolvedValue('custom string')
 
       const schema = {
-        '@get/data': {
+        getData: defineEndpoint('@get/data', {
           response: z.union([z.object({ id: z.string() }), z.string()]),
           faker: customFaker,
-        },
+        }),
       }
 
-      expect(() => generateMockApi(schema, stringMockFaker)).not.toThrow()
+      expect(() => generateMockApi({ schema }, stringMockFaker)).not.toThrow()
     })
   })
 
@@ -371,10 +382,10 @@ describe('generate-mock-api unit tests', () => {
       })
 
       const schema = {
-        '@get/error': {
+        getError: defineEndpoint('@get/error', {
           response: z.object({ data: z.string() }),
           faker: customFaker,
-        },
+        }),
       }
 
       expect(() => generateMockApi(schema, mockFaker)).not.toThrow()
@@ -387,10 +398,10 @@ describe('generate-mock-api unit tests', () => {
       })
 
       const schema = {
-        '@get/error': {
+        getError: defineEndpoint('@get/error', {
           response: z.object({ data: z.string() }),
           faker: customFaker,
-        },
+        }),
       }
 
       expect(() => generateMockApi(schema, mockFaker)).not.toThrow()
@@ -404,24 +415,26 @@ describe('generate-mock-api unit tests', () => {
       })
 
       const schema = {
-        '@get/users': {
+        getUsers: defineEndpoint('@get/users', {
           response: z.array(z.object({ id: z.string() })),
           faker: {
             length: 3,
             faker: itemFaker,
           },
-        },
+        }),
       }
 
-      expect(() => generateMockApi(schema, mockFaker)).not.toThrow()
+      expect(() => generateMockApi({ schema }, mockFaker)).not.toThrow()
       consoleSpy.mockRestore()
     })
   })
 
   describe('mockContext functionality', () => {
     it('should create mockContext as Map instance', () => {
-      const schema = defineApiSchema({
-        '@get/test': { response: z.object({ data: z.string() }) },
+      const schema = ({
+        getTest: defineEndpoint('@get/test', {
+          response: z.object({ data: z.string() }),
+        }),
       })
 
       const { mockContext } = generateMockApi(schema, mockFaker)
@@ -435,8 +448,10 @@ describe('generate-mock-api unit tests', () => {
     })
 
     it('should allow setting and getting values in mockContext', () => {
-      const schema = defineApiSchema({
-        '@get/test': { response: z.object({ data: z.string() }) },
+      const schema = ({
+        getTest: defineEndpoint('@get/test', {
+          response: z.object({ data: z.string() }),
+        }),
       })
 
       const { mockContext } = generateMockApi(schema, mockFaker)
@@ -447,9 +462,13 @@ describe('generate-mock-api unit tests', () => {
     })
 
     it('should share mockContext across all endpoints', () => {
-      const schema = defineApiSchema({
-        '@get/users': { response: z.object({ id: z.string() }) },
-        '@post/users': { response: z.object({ id: z.string() }) },
+      const schema = ({
+        getUsers: defineEndpoint('@get/users', {
+          response: z.object({ id: z.string() }),
+        }),
+        postUsers: defineEndpoint('@post/users', {
+          response: z.object({ id: z.string() }),
+        }),
       })
 
       const { mockContext } = generateMockApi(schema, mockFaker)
@@ -461,20 +480,22 @@ describe('generate-mock-api unit tests', () => {
 
   describe('edge cases', () => {
     it('should handle malformed endpoint keys gracefully', () => {
-      const schema = {
-        '@': {
+      const schema = ({
+        // @ts-expect-error Testing invalid key
+        invalidKey: defineEndpoint('@', {
           response: z.object({ data: z.string() }),
-        },
-      }
+        }),
+      })
 
       expect(() => generateMockApi(schema, mockFaker)).toThrow()
     })
 
     it('should handle endpoint key without method', () => {
       const schema = {
-        '/users': {
+        // @ts-expect-error Testing invalid key
+        getUsers: defineEndpoint('/users', {
           response: z.object({ data: z.string() }),
-        },
+        }),
       }
 
       // Should skip this key since it doesn't start with @
@@ -482,10 +503,10 @@ describe('generate-mock-api unit tests', () => {
     })
 
     it('should handle empty path after method', () => {
-      const schema = defineApiSchema({
-        '@get/': {
+      const schema = ({
+        getTest: defineEndpoint('@get/', {
           response: z.object({ data: z.string() }),
-        },
+        }),
       })
 
       expect(() => generateMockApi(schema, mockFaker)).not.toThrow()
@@ -493,10 +514,10 @@ describe('generate-mock-api unit tests', () => {
 
     it('should handle undefined faker gracefully', () => {
       const schema = {
-        '@get/users': {
+        getUsers: defineEndpoint('@get/users', {
           response: z.object({ id: z.string() }),
           faker: undefined,
-        },
+        }),
       }
 
       expect(() => generateMockApi(schema, mockFaker)).not.toThrow()

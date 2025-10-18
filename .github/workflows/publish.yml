@@ -17,23 +17,24 @@ jobs:
         with:
           node-version: lts/*
           registry-url: 'https://registry.npmjs.org'
-
+          
       - name: Install pnpm
         run: npm install -g pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run tests
-        run: pnpm run test:run
+      - name: Run tests (core package)
+        run: pnpm -F mock-dash test:run
 
-      - name: Run linting
-        run: pnpm run lint
+      - name: Run linting (core package)
+        run: pnpm -F mock-dash lint
 
-      - name: Build package
-        run: pnpm run build
+      - name: Build core package
+        run: pnpm -F mock-dash build
 
-      - name: Publish to NPM
-        run: pnpm publish --no-git-checks
+      - name: Publish core package to NPM
+        working-directory: packages/mock-dash
+        run: pnpm publish --no-git-checks --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

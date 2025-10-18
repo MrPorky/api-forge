@@ -1,8 +1,2 @@
-import { defineApiSchema } from 'mock-dash'
-import { authApiSchema } from './auth-schema'
-import { productApiSchema } from './products-schema'
-
-export const apiSchema = defineApiSchema({
-  ...authApiSchema,
-  ...productApiSchema,
-})
+export * from './auth-schema'
+export * from './products-schema'

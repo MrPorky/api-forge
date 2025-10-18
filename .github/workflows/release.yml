@@ -4,7 +4,8 @@ on:
   push:
     branches: [main]
     paths:
-      - package.json
+      - packages/mock-dash/package.json
+  workflow_dispatch:
 
 jobs:
   release:
@@ -23,16 +24,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
-
+          
       - name: Install pnpm
         run: npm install -g pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Get package version
+      - name: Get core package version
         id: package-version
-        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+        run: echo "version=$(node -p "require('./packages/mock-dash/package.json').version")" >> $GITHUB_OUTPUT
 
       - name: Check if tag exists
         id: tag-exists
@@ -43,17 +44,17 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Run tests
+      - name: Run tests (core package)
         if: steps.tag-exists.outputs.exists == 'false'
-        run: pnpm run test:run
+        run: pnpm -F mock-dash test:run
 
-      - name: Run linting
+      - name: Run linting (core package)
         if: steps.tag-exists.outputs.exists == 'false'
-        run: pnpm run lint
+        run: pnpm -F mock-dash lint
 
-      - name: Build package
+      - name: Build core package
         if: steps.tag-exists.outputs.exists == 'false'
-        run: pnpm run build
+        run: pnpm -F mock-dash build
 
       - name: Create Release
         if: steps.tag-exists.outputs.exists == 'false'

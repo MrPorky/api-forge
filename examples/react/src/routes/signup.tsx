@@ -1,5 +1,5 @@
 import type { AriaAttributes, FormEventHandler } from 'react'
-import type { authApiSchema } from '@/api/schemas/auth-schema'
+import type { authSchema } from '@/api/schemas/auth-schema'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { isValidationError } from 'mock-dash'
 import { useState } from 'react'
@@ -15,9 +15,7 @@ export const Route = createFileRoute('/signup')({
   }),
 })
 
-type JSON = z.infer<
-  (typeof authApiSchema)['@post/auth/sign-up/email']['input']['json']
->
+type JSON = typeof authSchema.$inferInputJson['@post/auth/sign-up/email']
 
 function RouteComponent() {
   const navigate = useNavigate()
@@ -90,7 +88,7 @@ function RouteComponent() {
               {...addFieldErrors('name')}
             />
             {(errors.properties?.name?.errors ?? []).map(error => (
-              <small id="name-helper">{error}</small>
+              <small id="name-helper" key={error}>{error}</small>
             ))}
 
           </label>
@@ -106,7 +104,7 @@ function RouteComponent() {
               {...addFieldErrors('email')}
             />
             {(errors.properties?.email?.errors ?? []).map(error => (
-              <small id="email-helper">{error}</small>
+              <small id="email-helper" key={error}>{error}</small>
             ))}
 
           </label>
@@ -123,13 +121,13 @@ function RouteComponent() {
 
             />
             {(errors.properties?.password?.errors ?? []).map(error => (
-              <small id="password-helper">{error}</small>
+              <small id="password-helper" key={error}>{error}</small>
             ))}
           </label>
           <button type="submit">Signin</button>
 
           {(errors.errors).map(error => (
-            <ErrorParagraph>{error}</ErrorParagraph>
+            <ErrorParagraph key={error}>{error}</ErrorParagraph>
           ))}
           <small>
             Already have an account?

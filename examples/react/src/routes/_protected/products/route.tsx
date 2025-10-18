@@ -17,7 +17,7 @@ function RouteComponent() {
 
       <div className={styles.pruducts}>
         {products.map(product => (
-          <article className={styles.pruduct}>
+          <article className={styles.pruduct} key={product.id}>
             <header>
               <h2>{product.name}</h2>
             </header>
@@ -29,10 +29,9 @@ function RouteComponent() {
                   {product.price.toFixed(2)}
                 </strong>
               </p>
-              <button onClick={() => alert(`Added ${product.name} to cart!`)}>
+              <button type="button" onClick={() => alert(`Added ${product.name} to cart!`)}>
                 Add to cart
-              </button
-              >
+              </button>
             </footer>
           </article>
         ))}

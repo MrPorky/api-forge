@@ -1,9 +1,14 @@
 import type { ValidationTargets } from 'hono'
-import type z from 'zod'
-import type { ApiSchema } from './api-schema-types'
+import type { ZodArray } from 'zod'
+import type { HttpMethodPath } from './common-types'
+import type { IEndpoint } from './endpoints'
+import type { EndpointInputContext, IMock } from './mocks'
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
-import { httpMethodSchema } from './api-schema-types'
+import z from 'zod'
+import { Collection } from './collections'
+import { httpMethodSchema } from './common-types'
+import { isEndpoint, isEndpoints } from './endpoints'
 import { MockError } from './errors'
 
 export type FakeFn = <T extends z.ZodType>(schema: T) => T['_zod']['output']
@@ -44,10 +49,10 @@ export interface MockContext extends Map<string, unknown> {
  * import { Hono } from 'hono'
  * import { cors } from 'hono/cors'
  * import { logger } from 'hono/logger'
- * import { generateMockApi, defineMockServerSchema } from 'mock-dash'
+ * import { generateMockApi, defineApiSchema } from 'mock-dash'
  * import { generateMock } from '@anatine/zod-mock'
  *
- * const apiSchema = defineMockServerSchema({
+ * const apiSchema = defineApiSchema({
  *   '@get/users/:id': {
  *     input: {
  *       param: z.object({ id: z.string() }),
@@ -72,7 +77,9 @@ export interface MockContext extends Map<string, unknown> {
  *       email: z.string()
  *     })
  *   }
- * }, {
+ * })
+ *
+ * apiSchema.defineMock({
  *   '@get/users/:id': ({ inputs, mockContext }) => {
  *     // Custom mock with stateful behavior
  *     const users = mockContext.get('users') || []
@@ -84,7 +91,7 @@ export interface MockContext extends Map<string, unknown> {
  *   }
  * })
  *
- * const { app, mockContext } = generateMockApi(apiSchema, generateMock, {
+ * const { app, mockContext } = generateMockApi({apiSchema}, generateMock, {
  *   base: '/api/v1',
  *   addMiddleware: (app) => {
  *     // Add CORS support
@@ -121,13 +128,13 @@ export interface MockContext extends Map<string, unknown> {
  * serve({ fetch: app.fetch, port: 3001 })
  * ```
  */
-export function generateMockApi<T extends ApiSchema>(apiSchema: T, fake: FakeFn, options: MockGenerationOptions = {}) {
+export function generateMockApi<T extends Record<string, unknown>>(apiSchema: T, fake: FakeFn, options: MockGenerationOptions = {}) {
   const mockContext = new Map<string, unknown>()
   const app = new Hono().basePath(options.base ?? '')
 
   options.addMiddleware?.(app)
 
-  for (const [key, endpoint] of Object.entries(apiSchema)) {
+  function processEndpoint(key: string, endpoint: IEndpoint<HttpMethodPath, z.ZodType>, mock?: IMock<HttpMethodPath, z.ZodType | ZodArray<z.ZodType>, any>) {
     if (key.startsWith('@')) {
       const parts = key.split('/')
       const httpMethodPart = parts[0].replace('@', '')
@@ -141,63 +148,51 @@ export function generateMockApi<T extends ApiSchema>(apiSchema: T, fake: FakeFn,
       const inputvalidators = endpoint.input
         ? Object.entries(endpoint.input)
             .map(([target, zodType]) =>
-              zValidator(target as keyof ValidationTargets, zodType))
+              zValidator(target as keyof ValidationTargets, zodType instanceof z.ZodType ? zodType : z.object(zodType as any)))
         : []
 
       app[method](path, ...inputvalidators, async (c) => {
-        const inputs: ValidationTargets = {
-          cookie: {},
-          header: c.req.header(),
+        const inputs = {
           query: c.req.query(),
           json: await c.req.json().catch(() => ({})),
           form: await c.req.parseBody().catch(() => ({})),
           param: c.req.param(),
         }
 
-        let mockData = fake(endpoint.response)
-        const customFaker = endpoint.faker
+        let mockData: unknown
+        const customFaker = mock?.mockFn
 
         try {
-          if (customFaker) {
+          if (!customFaker) {
+            mockData = fake(endpoint.response)
+          }
+          else {
             const fakerContext = {
               mockContext,
               inputs,
               honoContext: c,
-            }
+            } satisfies EndpointInputContext<HttpMethodPath, any>
 
             if (typeof customFaker === 'function') {
-              const fakerData = await Promise.resolve(customFaker(fakerContext))
-
-              if (Array.isArray(mockData) && Array.isArray(fakerData)) {
-                mockData = [...(mockData as unknown[]), ...(fakerData as unknown[])]
-              }
-              else if (mockData && typeof mockData === 'object' && fakerData && typeof fakerData === 'object') {
-                mockData = { ...(mockData as object), ...(fakerData as object) }
-              }
-              else {
-                mockData = fakerData
-              }
+              mockData = await Promise.resolve(customFaker(fakerContext))
             }
             else {
               const { length, min, max, faker: itemFaker } = customFaker
 
-              let fakerData: unknown[] = []
-
               if (length !== undefined) {
-                fakerData = await Promise.all(
-                  Array.from({ length }, async (_, i) => await Promise.resolve(itemFaker(fakerContext, i))),
+                mockData = await Promise.all(
+                  Array.from({ length }, async (_, i) =>
+                    await Promise.resolve(itemFaker(fakerContext, i))),
                 )
               }
               else if (min !== undefined || max !== undefined) {
                 const actualMin = min ?? 0
                 const actualMax = max ?? actualMin + 10
                 const randomLength = Math.floor(Math.random() * (actualMax - actualMin + 1)) + actualMin
-                fakerData = await Promise.all(
+                mockData = await Promise.all(
                   Array.from({ length: randomLength }, async (_, i) => await Promise.resolve(itemFaker(fakerContext, i))),
                 )
               }
-
-              mockData = fakerData
             }
           }
         }
@@ -210,8 +205,36 @@ export function generateMockApi<T extends ApiSchema>(apiSchema: T, fake: FakeFn,
           throw error
         }
 
-        return c.json(mockData as Record<string, unknown>)
+        if (mockData instanceof Response) {
+          return mockData
+        }
+        else {
+          return c.json(mockData)
+        }
       })
+    }
+  }
+
+  for (const apiDefinition of Object.values(apiSchema)) {
+    if (apiDefinition instanceof Collection) {
+      apiDefinition.initialize(fake)
+      continue
+    }
+
+    // Handle individual Endpoint instances
+    if (isEndpoint(apiDefinition)) {
+      const [key, endpoint, mock] = apiDefinition.getEntry()
+      processEndpoint(key, endpoint, mock)
+      continue
+    }
+
+    // Handle Endpoints class instances (plural API)
+    if (isEndpoints(apiDefinition)) {
+      const entries = apiDefinition.getEntries()
+      for (const [key, endpoint, mock] of entries) {
+        processEndpoint(key, endpoint, mock)
+      }
+      continue
     }
   }
 
