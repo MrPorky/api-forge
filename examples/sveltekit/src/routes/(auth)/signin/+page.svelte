@@ -1,5 +1,5 @@
 <script lang='ts'>
-  import type { authSchema } from '$lib/schemas/auth-schema'
+  import type { signIn } from '@examples/shared'
   import type { AriaAttributes } from 'svelte/elements'
   import type { PageProps } from './$types'
   import { goto } from '$app/navigation'
@@ -12,7 +12,7 @@
   const { data }: PageProps = $props()
   const { redirect } = data
 
-  type JSON = typeof authSchema.$inferInputJson['@post/auth/sign-in/email']
+  type JSON = typeof signIn.$inferInputJson
 
   let errors = $state<ReturnType<typeof z.treeifyError<JSON>>>({
     errors: [],

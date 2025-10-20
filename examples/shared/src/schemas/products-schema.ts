@@ -1,14 +1,13 @@
-import { dev } from '$app/environment'
-import { productModel } from '$lib/models/product'
 import { faker } from '@faker-js/faker'
 import { defineEndpoint } from 'mock-dash'
 import z from 'zod'
+import { productModel } from '../models/product'
 
 export const getProducts = defineEndpoint('@get/products', {
   response: z.array(productModel),
 })
 
-if (dev) {
+if (process.env.NODE_ENV !== 'production') {
   getProducts.defineMock(({
     mockFn: {
       length: 5,

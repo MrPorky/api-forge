@@ -8,7 +8,7 @@ import { Hono } from 'hono'
 import z from 'zod'
 import { Collection } from './collections'
 import { httpMethodSchema } from './common-types'
-import { isEndpoint, isEndpoints } from './endpoints'
+import { isEndpoint } from './endpoints'
 import { MockError } from './errors'
 
 export type FakeFn = <T extends z.ZodType>(schema: T) => T['_zod']['output']
@@ -225,15 +225,6 @@ export function generateMockApi<T extends Record<string, unknown>>(apiSchema: T,
     if (isEndpoint(apiDefinition)) {
       const [key, endpoint, mock] = apiDefinition.getEntry()
       processEndpoint(key, endpoint, mock)
-      continue
-    }
-
-    // Handle Endpoints class instances (plural API)
-    if (isEndpoints(apiDefinition)) {
-      const entries = apiDefinition.getEntries()
-      for (const [key, endpoint, mock] of entries) {
-        processEndpoint(key, endpoint, mock)
-      }
       continue
     }
   }

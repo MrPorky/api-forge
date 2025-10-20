@@ -51,6 +51,9 @@ importers:
 
   examples/react:
     dependencies:
+      '@examples/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@tanstack/react-router':
         specifier: ^1.132.47
         version: 1.132.47(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -95,8 +98,17 @@ importers:
         specifier: ^5.1.4
         version: 5.1.4(typescript@5.9.3)(vite@7.1.9(@types/node@24.7.2)(jiti@2.6.1)(less@4.4.2)(lightningcss@1.30.1)(sass@1.93.2)(stylus@0.62.0)(tsx@4.20.6)(yaml@2.8.1))
 
+  examples/shared:
+    dependencies:
+      mock-dash:
+        specifier: workspace:*
+        version: link:../../packages/mock-dash
+
   examples/sveltekit:
     dependencies:
+      '@examples/shared':
+        specifier: workspace:*
+        version: link:../shared
       mock-dash:
         specifier: workspace:*
         version: link:../../packages/mock-dash

@@ -1,6 +1,6 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 
-import type { User } from '$lib/models/user'
+import type { User } from '@examples/shared'
 
 // for information about these interfaces
 declare global {

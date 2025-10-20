@@ -1,4 +1,4 @@
-import type { User } from '@/models/user'
+import type { User } from '@examples/shared'
 import { createContext, use } from 'react'
 
 export interface AuthContextType {

@@ -1,5 +1,5 @@
+import type { User } from '@examples/shared'
 import type { PropsWithChildren } from 'react'
-import type { User } from '@/models/user'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiClient } from '@/api/api-client'
 import { AuthContext } from '@/hooks/use-auth'

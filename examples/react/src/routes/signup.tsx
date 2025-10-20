@@ -1,5 +1,5 @@
+import type { signUp } from '@examples/shared'
 import type { AriaAttributes, FormEventHandler } from 'react'
-import type { authSchema } from '@/api/schemas/auth-schema'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { isValidationError } from 'mock-dash'
 import { useState } from 'react'
@@ -7,6 +7,7 @@ import z from 'zod'
 import { apiClient } from '@/api/api-client'
 import { CenterLayout } from '@/components/center-layout/center-layout'
 import { ErrorParagraph } from '@/components/error-paragraph/error-paragraph'
+import { useAuth } from '@/hooks/use-auth'
 
 export const Route = createFileRoute('/signup')({
   component: RouteComponent,
@@ -15,11 +16,12 @@ export const Route = createFileRoute('/signup')({
   }),
 })
 
-type JSON = typeof authSchema.$inferInputJson['@post/auth/sign-up/email']
+type JSON = typeof signUp.$inferInputJson
 
 function RouteComponent() {
   const navigate = useNavigate()
   const { redirect } = Route.useSearch()
+  const { getSession } = useAuth()
 
   const [errors, setErrors] = useState<ReturnType<typeof z.treeifyError<JSON>>>({
     errors: [],
@@ -42,6 +44,7 @@ function RouteComponent() {
     try {
       await apiClient('@post/auth/sign-up/email', { json: data })
 
+      getSession()
       navigate({
         to: redirect,
       })

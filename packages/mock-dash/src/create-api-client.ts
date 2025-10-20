@@ -4,7 +4,7 @@ import type { IEndpoint } from './endpoints'
 import z from 'zod'
 import { InterceptorManager } from './client-types'
 import { httpMethodSchema } from './common-types'
-import { isEndpoint, isEndpoints } from './endpoints'
+import { isEndpoint } from './endpoints'
 import { ApiError, NetworkError, ValidationError } from './errors'
 import { buildFormData, serializeQueryParams } from './request-utils'
 
@@ -133,14 +133,6 @@ export function createApiClient<T extends Record<string, unknown>>(args: {
     if (isEndpoint(apiDefinition)) {
       const [key, e] = apiDefinition.getEntry()
       mergedEndpointMap[key] = e
-    }
-
-    // Handle Endpoints class instances (plural API)
-    if (isEndpoints(apiDefinition)) {
-      const entries = apiDefinition.getEntries()
-      for (const [key, endpoint] of entries) {
-        mergedEndpointMap[key] = endpoint
-      }
     }
   })
 

@@ -1,16 +1,14 @@
 import type z from 'zod'
 import type { HttpMethodPath, InputsWithParams } from './common-types'
-import type { Endpoint, Endpoints, IEndpoint } from './endpoints'
+import type { Endpoint, IEndpoint } from './endpoints'
 import type { EmptyObjectIsNever, UnionToIntersection } from './type-utils'
 
 type ApiSchema = Record<string, IEndpoint<HttpMethodPath, z.ZodType | z.ZodArray>>
 
 type FlattenEndpointsToUnion<T> = {
-  [K in keyof T]: T[K] extends Endpoint<infer EndpointKey, any, any>
-    ? { [P in EndpointKey]: T[K] extends Endpoint<any, any, infer EndpointDef> ? EndpointDef : never }
-    : T[K] extends Endpoints<infer EndpointsType>
-      ? { [P in keyof EndpointsType]: EndpointsType[P] extends IEndpoint<HttpMethodPath, z.ZodType | z.ZodArray> ? EndpointsType[P] : never }
-      : never
+  [K in keyof T]: T[K] extends Endpoint<infer EndpointKey, infer EndpointDef>
+    ? { [P in EndpointKey]: EndpointDef }
+    : never
 }[keyof T]
 
 type FlattenEndpoints<T>

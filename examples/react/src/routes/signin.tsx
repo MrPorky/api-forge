@@ -1,12 +1,13 @@
-import type { AriaAttributes, FormEventHandler } from 'react'
-import type { authSchema } from '@/api/schemas/auth-schema'
+import type { signIn } from '@examples/shared'
+import type { AriaAttributes } from 'react'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { isValidationError } from 'mock-dash'
-import { useState } from 'react'
+import { useActionState } from 'react'
 import z from 'zod'
 import { apiClient } from '@/api/api-client'
 import { CenterLayout } from '@/components/center-layout/center-layout'
 import { ErrorParagraph } from '@/components/error-paragraph/error-paragraph'
+import { useAuth } from '@/hooks/use-auth'
 
 export const Route = createFileRoute('/signin')({
   component: RouteComponent,
@@ -15,24 +16,15 @@ export const Route = createFileRoute('/signin')({
   }),
 })
 
-type JSON = typeof authSchema.$inferInputJson['@post/auth/sign-in/email']
+type JSON = typeof signIn.$inferInputJson
+type Errors = ReturnType<typeof z.treeifyError<JSON>>
 
 function RouteComponent() {
   const navigate = useNavigate()
   const { redirect } = Route.useSearch()
+  const { getSession } = useAuth()
 
-  const [errors, setErrors] = useState<ReturnType<typeof z.treeifyError<JSON>>>({
-    errors: [],
-    properties: {},
-  })
-
-  const handleSubmit: FormEventHandler<HTMLFormElement> = async (
-    event,
-  ) => {
-    setErrors({ errors: [], properties: {} })
-
-    event.preventDefault()
-    const formData = new FormData(event.currentTarget, (event.nativeEvent as SubmitEvent).submitter)
+  const [errors, fromAction, isSubmitting] = useActionState<Promise<Errors>, FormData>(async (_, formData) => {
     const data: JSON = {
       email: formData.get('email') as string,
       password: formData.get('password') as string,
@@ -41,6 +33,7 @@ function RouteComponent() {
 
     try {
       await apiClient('@post/auth/sign-in/email', { json: data })
+      getSession()
 
       navigate({
         to: redirect,
@@ -48,16 +41,24 @@ function RouteComponent() {
     }
     catch (error) {
       if (isValidationError(error)) {
-        setErrors(z.treeifyError(error.validationErrors as z.ZodError<JSON>))
+        return z.treeifyError(error.validationErrors as z.ZodError<JSON>)
       }
       else {
-        setErrors({
+        return {
           errors: ['Could not signin'],
           properties: {},
-        })
+        }
       }
     }
-  }
+
+    return {
+      errors: [],
+      properties: {},
+    }
+  }, {
+    errors: [],
+    properties: {},
+  })
 
   function addFieldErrors(key: keyof JSON) {
     const err = errors.properties?.[key]
@@ -75,7 +76,7 @@ function RouteComponent() {
     <CenterLayout>
       <article>
         <header>Signin</header>
-        <form onSubmit={handleSubmit}>
+        <form action={fromAction}>
           <label>
             Email
             <input
@@ -117,10 +118,9 @@ function RouteComponent() {
                 name="remember"
               />
               Remember me
-            </label
-            >
+            </label>
           </fieldset>
-          <button type="submit">Signin</button>
+          <button disabled={isSubmitting} type="submit">Signin</button>
 
           {(errors.errors).map(error => (
             <ErrorParagraph key={error}>{error}</ErrorParagraph>

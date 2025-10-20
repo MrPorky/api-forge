@@ -12,6 +12,7 @@
     "prepare": "svelte-kit sync || echo ''"
   },
   "dependencies": {
+    "@examples/shared": "workspace:*",
     "mock-dash": "workspace:*"
   },
   "devDependencies": {

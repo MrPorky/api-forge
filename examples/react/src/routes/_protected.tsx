@@ -1,10 +1,10 @@
 import { createFileRoute, Link, Outlet, redirect } from '@tanstack/react-router'
-import favicon from '../../public/vite.svg'
+import favicon from '../../public/vite.svg?url'
 import styles from './_protected.module.css'
 
 export const Route = createFileRoute('/_protected')({
   component: RouteComponent,
-  beforeLoad: ({ context, location }) => {
+  beforeLoad: async ({ context, location }) => {
     if (!context.auth.isAuthenticated) {
       throw redirect({
         to: '/signin',
