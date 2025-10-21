@@ -101,3 +101,82 @@ export function isEndpoint(
 > {
   return obj instanceof Endpoint
 }
+
+export function isEndpoints(obj: unknown): obj is Endpoints<any> {
+  return obj instanceof Endpoints
+}
+
+type EndpointsDefinition = {
+  [K in HttpMethodPath]: IEndpoint<K, z.ZodType>
+}
+
+/**
+ * Defines a collection of endpoints.
+ * @param endpoints
+ * @returns Endpoints instance
+ * @deprecated use `defineEndpoint` instead
+ */
+export function defineEndpoints<T extends EndpointsDefinition>(
+  endpoints: T,
+): Endpoints<T> {
+  return new Endpoints(endpoints)
+}
+
+export class Endpoints<T extends EndpointsDefinition> {
+  private readonly endpointMap: Map<keyof T, Endpoint<any, any>> = new Map()
+
+  public $inferInputJson: {
+    [K in keyof T]: T[K] extends IEndpoint<infer TKey, infer _TResponse>
+      ? InputsWithParams<TKey, T[K]['input']> extends { json: infer J }
+        ? J
+        : never
+      : never
+  } = {} as any
+
+  constructor(endpoints: T) {
+    for (const [key, endpoint] of Object.entries(endpoints)) {
+      if (endpoint && 'response' in endpoint) {
+        this.endpointMap.set(
+          key as keyof T,
+          new Endpoint(
+            key as HttpMethodPath,
+            endpoint as IEndpoint<HttpMethodPath, z.ZodType>,
+          ),
+        )
+      }
+    }
+  }
+
+  getEndpoint<K extends keyof T>(
+    key: K,
+  ): T[K] extends IEndpoint<infer TKey, infer _TResponse>
+    ? Endpoint<TKey, T[K]> | undefined
+    : undefined {
+    return this.endpointMap.get(key) as any
+  }
+
+  getAllEndpoints(): Array<Endpoint<any, any>> {
+    return Array.from(this.endpointMap.values())
+  }
+
+  getEntries() {
+    return Array.from(this.endpointMap.entries()).map(([_key, endpoint]) =>
+      endpoint.getEntry(),
+    )
+  }
+
+  defineMocks<
+    M extends {
+      [K in keyof T]?: T[K] extends IEndpoint<infer TKey, infer TResponse>
+        ? IMock<TKey, TResponse, T[K]['input']>
+        : never
+    },
+  >(mocks: M): void {
+    for (const [key, mock] of Object.entries(mocks)) {
+      const endpoint = this.endpointMap.get(key as keyof T)
+      if (endpoint && mock) {
+        endpoint.defineMock(mock)
+      }
+    }
+  }
+}

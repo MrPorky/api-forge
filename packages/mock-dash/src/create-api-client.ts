@@ -13,7 +13,7 @@ import type {
 import { InterceptorManager } from './client-types'
 import { httpMethodSchema } from './common-types'
 import type { IEndpoint } from './endpoints'
-import { isEndpoint } from './endpoints'
+import { isEndpoint, isEndpoints } from './endpoints'
 import { ApiError, NetworkError, ValidationError } from './errors'
 import { buildFormData, serializeQueryParams } from './request-utils'
 
@@ -154,6 +154,14 @@ export function createApiClient<T extends Record<string, unknown>>(
     if (isEndpoint(apiDefinition)) {
       const [key, e] = apiDefinition.getEntry()
       mergedEndpointMap[key] = e
+    }
+
+    // Handle Endpoints class instances (plural API)
+    if (isEndpoints(apiDefinition)) {
+      const entries = apiDefinition.getEntries()
+      for (const [key, endpoint] of entries) {
+        mergedEndpointMap[key] = endpoint
+      }
     }
   })
 
@@ -378,7 +386,16 @@ export function createApiClient<T extends Record<string, unknown>>(
 
     let jsonResponse: unknown
     try {
-      jsonResponse = await response.json()
+      if (
+        endpoint.response instanceof z.ZodString ||
+        endpoint.response instanceof z.ZodStringFormat
+      ) {
+        jsonResponse = await response.text()
+      } else if (endpoint.response instanceof z.ZodVoid) {
+        jsonResponse = undefined
+      } else {
+        jsonResponse = await response.json()
+      }
     } catch (error) {
       throw new ApiError('Failed to parse response as JSON', response.status, {
         url: fullUrl,
