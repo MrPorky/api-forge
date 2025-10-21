@@ -52,12 +52,20 @@ export type EndpointInput<K extends HttpMethodPath> = K extends
 export interface IEndpoint<K extends HttpMethodPath, R extends z.ZodType> {
   input?: EndpointInput<K>
   response: R
+  prefix?: string
+}
+
+export type EndpointConfiguration = {
+  prefix?: `/${string}`
 }
 
 export function defineEndpoint<
   K extends HttpMethodPath,
   E extends IEndpoint<K, z.ZodType>,
->(key: K, endpoint: E) {
+>(key: K, endpoint: E, options?: EndpointConfiguration) {
+  if (options?.prefix) {
+    endpoint.prefix = normalizePrefix(options.prefix)
+  }
   return new Endpoint(key, endpoint)
 }
 
@@ -91,6 +99,40 @@ export class Endpoint<
   defineMock(mock: IMock<K, E['response'], E['input']>) {
     this.mock = mock
   }
+}
+
+function normalizePrefix(prefix: string): string {
+  if (!prefix) return ''
+
+  let p = prefix.trim()
+
+  // Replace multiple slashes with single
+  p = p.replace(/\/+/g, '/')
+
+  if (!p.startsWith('/')) p = `/${p}`
+
+  // remove trailing slash(es)
+  while (p.length > 1 && p.endsWith('/')) p = p.slice(0, -1)
+
+  return p
+}
+
+/**
+ * Builds the runtime path for an endpoint key applying an optional prefix.
+ * @param key
+ * @param endpoint
+ * @returns A path that always begins with '/' and a Prefix
+ */
+export function buildEndpointPath(
+  key: string,
+  endpoint: Pick<IEndpoint<HttpMethodPath, z.ZodType>, 'prefix'>,
+) {
+  const parts = key.split('/')
+  const rawPath = `/${parts.slice(1).join('/')}` // drop @method part
+  const p = endpoint.prefix ? normalizePrefix(endpoint.prefix) : ''
+  if (!p) return rawPath
+  // Avoid duplicate slashes when prefix is root
+  return p === '/' ? rawPath : p + rawPath
 }
 
 export function isEndpoint(

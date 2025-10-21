@@ -13,7 +13,7 @@ import type {
 import { InterceptorManager } from './client-types'
 import { httpMethodSchema } from './common-types'
 import type { IEndpoint } from './endpoints'
-import { isEndpoint, isEndpoints } from './endpoints'
+import { buildEndpointPath, isEndpoint, isEndpoints } from './endpoints'
 import { ApiError, NetworkError, ValidationError } from './errors'
 import { buildFormData, serializeQueryParams } from './request-utils'
 
@@ -188,7 +188,7 @@ export function createApiClient<T extends Record<string, unknown>>(
       throw new ApiError(`${httpMethodPart} is not a valid HTTP method.`, 404)
     }
     const method = methodResult.data
-    const path = `/${parts.slice(1).join('/')}`
+    const path = buildEndpointPath(key, endpoint)
 
     let fullUrl = baseURL + path
 
@@ -298,7 +298,7 @@ export function createApiClient<T extends Record<string, unknown>>(
       key,
       inputs,
       method,
-      path: path.slice(1), // Remove leading slash
+      path: path.slice(1), // Remove leading slash (prefix + original path)
     }
 
     if (transformRequest) {

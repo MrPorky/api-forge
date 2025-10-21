@@ -7,7 +7,7 @@ import { Collection } from './collections'
 import type { HttpMethodPath } from './common-types'
 import { httpMethodSchema } from './common-types'
 import type { IEndpoint } from './endpoints'
-import { isEndpoint, isEndpoints } from './endpoints'
+import { buildEndpointPath, isEndpoint, isEndpoints } from './endpoints'
 import { MockError } from './errors'
 import type { EndpointInputContext, IMock } from './mocks'
 
@@ -151,7 +151,7 @@ export function generateMockApi<T extends Record<string, unknown>>(
         throw new Error(`${httpMethodPart} is not a valid HTTP method.`)
       }
       const method = methodResult.data
-      const path = `/${parts.slice(1).join('/')}`
+      const path = buildEndpointPath(key, endpoint)
 
       const inputValidators = endpoint.input
         ? Object.entries(endpoint.input).map(([target, zodType]) =>

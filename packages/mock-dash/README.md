@@ -336,6 +336,38 @@ const createUser = defineEndpoint('@post/users', {
 })
 ```
 
+### Prefix Option
+
+You can add a `prefix` to an endpoint without changing its key. This is useful if your runtime API path is versioned or nested (e.g. `/api/v1`) but you want to keep keys concise.
+
+```ts
+const getVersionedUser = defineEndpoint(
+  '@get/users/:id',
+  { response: userSchema },
+  { prefix: '/api/v1' },
+)
+
+// Calls still use the original key:
+await apiClient('@get/users/:id', { param: { id: '123' } })
+// Fetches: GET /api/v1/users/123
+
+// Prefix normalization examples:
+defineEndpoint('@get/ping', { response: z.string() }, { prefix: '///api///v2//' })
+// Runtime path => /api/v2/ping
+```
+
+Rules:
+* Key remains unchanged for client calls & inference.
+* Prefix is prepended to the path seen by fetch and the mock server.
+* Multiple/duplicate slashes are collapsed, trailing slash removed, leading slash enforced.
+* Use a shared constant for many endpoints:
+
+```ts
+const API_PREFIX = '/api/v2'
+export const listProducts = defineEndpoint('@get/products', { response: z.array(productSchema) }, { prefix: API_PREFIX })
+export const createProduct = defineEndpoint('@post/products', { input: { json: createProductSchema }, response: productSchema }, { prefix: API_PREFIX })
+```
+
 ## Features
 
 - **Type Safety**: Full TypeScript support with inferred types from Zod schemas
