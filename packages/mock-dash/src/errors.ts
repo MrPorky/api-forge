@@ -30,7 +30,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     status: number,
-    options?: { body?: unknown, url?: string, method?: string, cause?: Error },
+    options?: { body?: unknown; url?: string; method?: string; cause?: Error },
   ) {
     super(message, { cause: options?.cause })
     this.name = 'ApiError'
@@ -38,8 +38,7 @@ export class ApiError extends Error {
     this.body = options?.body
     this.url = options?.url
     this.method = options?.method
-    if (Error.captureStackTrace)
-      Error.captureStackTrace(this, ApiError)
+    if (Error.captureStackTrace) Error.captureStackTrace(this, ApiError)
   }
 }
 
@@ -56,7 +55,13 @@ export class ValidationError extends ApiError {
     message: string,
     validationErrors: z.ZodError,
     validationType: 'request' | 'response',
-    options?: { status?: number, body?: unknown, url?: string, method?: string, cause?: Error },
+    options?: {
+      status?: number
+      body?: unknown
+      url?: string
+      method?: string
+      cause?: Error
+    },
   ) {
     super(message, options?.status ?? 400, {
       body: options?.body,
@@ -67,8 +72,7 @@ export class ValidationError extends ApiError {
     this.name = 'ValidationError'
     this.validationErrors = validationErrors
     this.validationType = validationType
-    if (Error.captureStackTrace)
-      Error.captureStackTrace(this, ValidationError)
+    if (Error.captureStackTrace) Error.captureStackTrace(this, ValidationError)
   }
 
   /**
@@ -78,7 +82,11 @@ export class ValidationError extends ApiError {
     const out: Record<string, string[]> = {}
     for (const issue of this.validationErrors.issues) {
       const key = issue.path.join('.') || '_root'
-        ; (out[key] ||= []).push(issue.message)
+      if (!out[key]) {
+        out[key] = []
+      }
+
+      out[key].push(issue.message)
     }
     return out
   }
@@ -87,7 +95,9 @@ export class ValidationError extends ApiError {
    * Flatten issues into printable summary strings.
    */
   public getAllErrorMessages(): string[] {
-    return this.validationErrors.issues.map(i => `${i.path.length ? `${i.path.join('.')}: ` : ''}${i.message}`)
+    return this.validationErrors.issues.map(
+      (i) => `${i.path.length ? `${i.path.join('.')}: ` : ''}${i.message}`,
+    )
   }
 }
 
@@ -99,13 +109,20 @@ export class NetworkError extends Error {
   public readonly url?: string
   public readonly method?: string
   public readonly timeout?: boolean
-  constructor(message: string, options?: { url?: string, method?: string, timeout?: boolean, cause?: Error }) {
+  constructor(
+    message: string,
+    options?: {
+      url?: string
+      method?: string
+      timeout?: boolean
+      cause?: Error
+    },
+  ) {
     super(message, { cause: options?.cause })
     this.name = 'NetworkError'
     this.url = options?.url
     this.method = options?.method
     this.timeout = options?.timeout ?? false
-    if (Error.captureStackTrace)
-      Error.captureStackTrace(this, NetworkError)
+    if (Error.captureStackTrace) Error.captureStackTrace(this, NetworkError)
   }
 }

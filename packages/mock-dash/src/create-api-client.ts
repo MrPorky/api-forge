@@ -1,10 +1,19 @@
 import type { ValidationTargets } from 'hono'
-import type { ApiSchemaEndpoints, Args, Client, ClientProperties, FetchOptions, InterceptorCallback, InterceptorContext } from './client-types'
-import type { IEndpoint } from './endpoints'
 import z from 'zod'
+import type {
+  ApiSchemaEndpoints,
+  Args,
+  Client,
+  ClientFn,
+  ClientProperties,
+  FetchOptions,
+  InterceptorCallback,
+  InterceptorContext,
+} from './client-types'
 import { InterceptorManager } from './client-types'
 import { httpMethodSchema } from './common-types'
-import { isEndpoint, isEndpoints } from './endpoints'
+import type { IEndpoint } from './endpoints'
+import { isEndpoint } from './endpoints'
 import { ApiError, NetworkError, ValidationError } from './errors'
 import { buildFormData, serializeQueryParams } from './request-utils'
 
@@ -110,13 +119,22 @@ import { buildFormData, serializeQueryParams } from './request-utils'
  * })
  * ```
  */
-export function createApiClient<T extends Record<string, unknown>>(args: {
-  apiSchema: T
-  baseURL: string
-  transformRequest?: InterceptorCallback<ApiSchemaEndpoints<T>, FetchOptions>
-  transformResponse?: InterceptorCallback<ApiSchemaEndpoints<T>, Response>
-} & FetchOptions): Client<ApiSchemaEndpoints<T>> {
-  const { apiSchema, baseURL, headers: customHeaders, transformRequest, transformResponse, ...requestOptions } = args
+export function createApiClient<T extends Record<string, unknown>>(
+  args: {
+    apiSchema: T
+    baseURL: string
+    transformRequest?: InterceptorCallback<ApiSchemaEndpoints<T>, FetchOptions>
+    transformResponse?: InterceptorCallback<ApiSchemaEndpoints<T>, Response>
+  } & FetchOptions,
+): Client<ApiSchemaEndpoints<T>> {
+  const {
+    apiSchema,
+    baseURL,
+    headers: customHeaders,
+    transformRequest,
+    transformResponse,
+    ...requestOptions
+  } = args
 
   const properties: ClientProperties<ApiSchemaEndpoints<T>> = {
     interceptors: {
@@ -126,7 +144,10 @@ export function createApiClient<T extends Record<string, unknown>>(args: {
     overrides: {},
   }
 
-  const mergedEndpointMap: Record<string, IEndpoint<`@post/${string}`, z.ZodType | z.ZodArray>> = {}
+  const mergedEndpointMap: Record<
+    string,
+    IEndpoint<`@post/${string}`, z.ZodType | z.ZodArray>
+  > = {}
 
   Object.values(apiSchema).forEach((apiDefinition) => {
     // Handle individual Endpoint instances
@@ -134,22 +155,17 @@ export function createApiClient<T extends Record<string, unknown>>(args: {
       const [key, e] = apiDefinition.getEntry()
       mergedEndpointMap[key] = e
     }
-
-    // Handle Endpoints class instances (plural API)
-    if (isEndpoints(apiDefinition)) {
-      const entries = apiDefinition.getEntries()
-      for (const [key, endpoint] of entries) {
-        mergedEndpointMap[key] = endpoint
-      }
-    }
   })
 
   const requestApi = async (
     key: keyof ApiSchemaEndpoints<T> & string,
     data: Partial<ValidationTargets> | undefined = undefined,
-  ): Promise<any> => {
+  ): Promise<unknown> => {
     if (!key.startsWith('@')) {
-      throw new ApiError(`Invalid endpoint key: ${key}. It should start with '@' followed by the HTTP method.`, 400)
+      throw new ApiError(
+        `Invalid endpoint key: ${key}. It should start with '@' followed by the HTTP method.`,
+        400,
+      )
     }
 
     const endpoint = mergedEndpointMap[key]
@@ -180,29 +196,43 @@ export function createApiClient<T extends Record<string, unknown>>(args: {
     }
 
     // Handle URL parameters
-    if (data && data.param) {
+    if (data?.param) {
       for (const key in data.param) {
-        if (Object.prototype.hasOwnProperty.call(data.param, key)) {
+        if (Object.hasOwn(data.param, key)) {
           fullUrl = fullUrl.replace(`:${key}`, data.param[key])
-        }
-        else {
-          throw new ApiError(`Missing URL parameter ${key} for endpoint ${path}`, 400, {
-            url: fullUrl,
-            method: method.toUpperCase(),
-          })
+        } else {
+          throw new ApiError(
+            `Missing URL parameter ${key} for endpoint ${path}`,
+            400,
+            {
+              url: fullUrl,
+              method: method.toUpperCase(),
+            },
+          )
         }
       }
     }
 
     // Check for missing URL parameters in the path
     const missingParams = path.match(/:(\w+)/g)
-    if (missingParams && (!data || !data.param || missingParams.some(param => !(data.param ?? {})[param.slice(1)]))) {
-      const missingParam = missingParams.find(param => !data || !data.param || !data.param[param.slice(1)])
+    if (
+      missingParams &&
+      (!data ||
+        !data.param ||
+        missingParams.some((param) => !data.param?.[param.slice(1)]))
+    ) {
+      const missingParam = missingParams.find(
+        (param) => !data || !data.param || !data.param[param.slice(1)],
+      )
       if (missingParam) {
-        throw new ApiError(`Missing URL parameter ${missingParam.slice(1)} for endpoint ${path}`, 400, {
-          url: fullUrl,
-          method: method.toUpperCase(),
-        })
+        throw new ApiError(
+          `Missing URL parameter ${missingParam.slice(1)} for endpoint ${path}`,
+          400,
+          {
+            url: fullUrl,
+            method: method.toUpperCase(),
+          },
+        )
       }
     }
 
@@ -211,7 +241,9 @@ export function createApiClient<T extends Record<string, unknown>>(args: {
       for (const [inputType, schema] of Object.entries(endpoint.input)) {
         const inputData = data[inputType as keyof ValidationTargets]
         if (inputData !== undefined) {
-          const validationResult = (schema instanceof z.ZodType ? schema : z.object(schema)).safeParse(inputData)
+          const validationResult = (
+            schema instanceof z.ZodType ? schema : z.object(schema)
+          ).safeParse(inputData)
           if (!validationResult.success) {
             throw new ValidationError(
               `Request validation failed for ${inputType}`,
@@ -228,7 +260,7 @@ export function createApiClient<T extends Record<string, unknown>>(args: {
     }
 
     // Handle query parameters
-    if (data && data.query) {
+    if (data?.query) {
       const queryString = serializeQueryParams(data.query)
       if (queryString) {
         fullUrl += `?${queryString}`
@@ -239,18 +271,22 @@ export function createApiClient<T extends Record<string, unknown>>(args: {
     if (method !== 'get' && data) {
       if (endpoint.input?.json && data.json) {
         options.body = JSON.stringify(data.json)
-      }
-      else if (endpoint.input?.form && data.form) {
-        if ('Content-Type' in headers)
-          delete headers['Content-Type'] // Let the browser set the correct Content-Type for form data
+      } else if (endpoint.input?.form && data.form) {
+        if ('Content-Type' in headers) delete headers['Content-Type'] // Let the browser set the correct Content-Type for form data
 
         options.body = buildFormData(data.form)
       }
     }
 
     // Enhanced interceptor context with proper typing
-    const inputs = data as Args<ApiSchemaEndpoints<T>, keyof ApiSchemaEndpoints<T>>[0]
-    const interceptorContext: InterceptorContext<ApiSchemaEndpoints<T>, keyof ApiSchemaEndpoints<T>> = {
+    const inputs = data as Args<
+      ApiSchemaEndpoints<T>,
+      keyof ApiSchemaEndpoints<T>
+    >[0]
+    const interceptorContext: InterceptorContext<
+      ApiSchemaEndpoints<T>,
+      keyof ApiSchemaEndpoints<T>
+    > = {
       key,
       inputs,
       method,
@@ -264,13 +300,15 @@ export function createApiClient<T extends Record<string, unknown>>(args: {
       }
     }
 
-    options = await properties.interceptors.request.runAll(interceptorContext, options)
+    options = await properties.interceptors.request.runAll(
+      interceptorContext,
+      options,
+    )
 
     let response: Response
     try {
       response = await (properties.overrides.fetch || fetch)(fullUrl, options)
-    }
-    catch (error) {
+    } catch (error) {
       // Handle network errors (connection failures, timeouts, etc.)
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new NetworkError(`Network request failed: ${error.message}`, {
@@ -289,33 +327,40 @@ export function createApiClient<T extends Record<string, unknown>>(args: {
         })
       }
       // Re-throw other errors as NetworkError
-      throw new NetworkError(`Request failed: ${error instanceof Error ? error.message : 'Unknown error'}`, {
-        url: fullUrl,
-        method: method.toUpperCase(),
-        cause: error instanceof Error ? error : undefined,
-      })
+      throw new NetworkError(
+        `Request failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        {
+          url: fullUrl,
+          method: method.toUpperCase(),
+          cause: error instanceof Error ? error : undefined,
+        },
+      )
     }
 
     if (transformResponse) {
-      const transformedResponse = await transformResponse(interceptorContext, response)
+      const transformedResponse = await transformResponse(
+        interceptorContext,
+        response,
+      )
       if (transformedResponse !== undefined) {
         response = transformedResponse
       }
     }
 
-    response = await properties.interceptors.response.runAll(interceptorContext, response)
+    response = await properties.interceptors.response.runAll(
+      interceptorContext,
+      response,
+    )
 
     if (!response.ok) {
       let errorBody: unknown
       try {
         errorBody = await response.json()
-      }
-      catch {
+      } catch {
         try {
           const text = await response.text()
           errorBody = text ? { message: text } : { message: 'Unknown error' }
-        }
-        catch {
+        } catch {
           errorBody = { message: 'Unknown error' }
         }
       }
@@ -334,17 +379,12 @@ export function createApiClient<T extends Record<string, unknown>>(args: {
     let jsonResponse: unknown
     try {
       jsonResponse = await response.json()
-    }
-    catch (error) {
-      throw new ApiError(
-        'Failed to parse response as JSON',
-        response.status,
-        {
-          url: fullUrl,
-          method: method.toUpperCase(),
-          cause: error instanceof Error ? error : undefined,
-        },
-      )
+    } catch (error) {
+      throw new ApiError('Failed to parse response as JSON', response.status, {
+        url: fullUrl,
+        method: method.toUpperCase(),
+        cause: error instanceof Error ? error : undefined,
+      })
     }
 
     // Zod validation on the response
@@ -366,5 +406,8 @@ export function createApiClient<T extends Record<string, unknown>>(args: {
     return validationResult.data
   }
 
-  return Object.assign(requestApi as any, properties)
+  return Object.assign(
+    requestApi as ClientFn<ApiSchemaEndpoints<T>>,
+    properties,
+  )
 }

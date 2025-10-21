@@ -1,0 +1,30 @@
+{
+  "name": "@examples/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared models, schemas, and server code for mock-dash examples",
+  "main": "src/index.ts",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "default": "./src/server/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist node_modules",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "mock-dash": "workspace:*"
+  },
+  "files": [
+    "src",
+    "dist"
+  ]
+}

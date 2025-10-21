@@ -12,7 +12,7 @@ A TypeScript library that lets you define your API schema once and get both a ty
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Project Structure](#project-structure)
-- [API Schema Format](#api-schema-format)
+- [API Endpoint Format](#api-endpoint-format)
 - [Features](#features)
 - [Development Workflow](#development-workflow)
 - [Contributing](#contributing)
@@ -36,6 +36,11 @@ pnpm add mock-dash zod
 pnpm add -D hono
 ```
 
+MockDash has minimal dependencies:
+- **zod** (peer dependency) - For schema validation and type inference
+- **hono** (dev dependency) - For mock server generation
+- **@hono/zod-validator** - Built-in for request validation
+
 ## Quick Start
 
 ### 1. Define Your Models
@@ -55,51 +60,53 @@ export const userSchema = z.object({
 export type User = z.infer<typeof userSchema>
 ```
 
-### 2. Create API Schemas
+### 2. Create API Endpoints
 
 ```ts
 // src/api/schemas/users.ts
-import { defineApiSchema } from 'mock-dash'
+import { defineEndpoint } from 'mock-dash'
+import { z } from 'zod'
 import { userSchema } from '../../models/user'
 
-export const usersSchema = defineApiSchema({
-  '@get/users/:id': {
-    response: userSchema,
+export const getUserById = defineEndpoint('@get/users/:id', {
+  response: userSchema,
+})
+
+export const getUsers = defineEndpoint('@get/users', {
+  input: {
+    query: z.object({
+      page: z.string().optional(),
+      limit: z.string().optional(),
+    }),
   },
-  '@get/users': {
-    input: {
-      query: z.object({
-        page: z.string().optional(),
-        limit: z.string().optional(),
-      }),
-    },
-    response: z.array(userSchema),
+  response: z.array(userSchema),
+})
+
+export const createUser = defineEndpoint('@post/users', {
+  input: {
+    json: z.object({
+      personalNumber: z.string()
+        .length(12)
+        .regex(/^\d+$/),
+      name: z.string(),
+      givenName: z.string(),
+      surname: z.string(),
+    }),
   },
-  '@post/users': {
-    input: {
-      json: z.object({
-        personalNumber: z.string()
-          .length(12)
-          .regex(/^\d+$/),
-        name: z.string(),
-        givenName: z.string(),
-        surname: z.string(),
-      })
-    },
-    response: userSchema,
+  response: userSchema,
+})
+
+export const updateUser = defineEndpoint('@put/users/:id', {
+  input: {
+    json: userSchema.omit({ id: true }),
   },
-  '@put/users/:id': {
-    input: {
-      json: userSchema.omit({ id: true })
-    },
-    response: userSchema,
-  },
+  response: userSchema,
 })
 ```
 
 ```ts
 // src/api/schemas/index.ts
-export { usersSchema } from './users'
+export * from './users'
 ```
 
 ### 3. Create Your API Client
@@ -115,7 +122,7 @@ export const apiClient = createApiClient({
 })
 
 // Usage in your frontend
-const user = await apiClient('@get/users/:id', { params: { id: '123' } }) // Fully typed!
+const user = await apiClient('@get/users/:id', { param: { id: '123' } }) // Fully typed!
 const users = await apiClient('@get/users', { query: { page: '1' } })
 
 // Usage with @tanstack/query
@@ -166,8 +173,8 @@ import { zocker } from 'zocker'
 import * as apiSchema from '../src/api/schemas'
 
 // Optional: Define custom mocks
-apiSchema.defineMock({
-  '@get/users/:id': () => ({
+apiSchema.getUserById.defineMock({
+  mockFn: () => ({
     id: '123',
     personalNumber: '199001011234',
     name: 'John Doe',
@@ -231,36 +238,38 @@ serve({
 ```
 src/
 ├── models/           # Zod schemas for your data models
-│   └── user.ts
+│   ├── index.ts
+│   ├── user.ts
+│   └── product.ts
 ├── api/
-│   ├── client.ts     # Generated API client
+│   ├── client.ts     # API client instance
 │   └── schemas/      # API endpoint definitions
 │       ├── index.ts
-│       └── users.ts
+│       ├── users.ts
+│       └── products.ts
 mock-server/
 ├── index.ts          # Mock server setup
-└── server.ts         # Server entry point
+└── server.ts         # Server entry point (optional)
 ```
 
-## API Schema Format
+## API Endpoint Format
 
 MockDash uses a simple convention for defining endpoints:
 
 - `@{method}/{path}` - Define HTTP method and path
-- `input` - Define request validation (query, params, json, form)
+- `input` - Define request validation (query, param, json, form)
 - `response` - Define response schema
 
 ```ts
-const schema = defineApiSchema({
-  '@get/users/:id': {
-    response: userSchema,
+const getUserById = defineEndpoint('@get/users/:id', {
+  response: userSchema,
+})
+
+const createUser = defineEndpoint('@post/users', {
+  input: {
+    json: createUserSchema,
   },
-  '@post/users': {
-    input: {
-      json: createUserSchema,
-    },
-    response: userSchema,
-  },
+  response: userSchema,
 })
 ```
 
@@ -280,11 +289,13 @@ const schema = defineApiSchema({
 
 ## Development Workflow
 
-1. Define your API schema using Zod
-2. Generate type-safe API client for frontend development
-3. Run mock server for immediate frontend testing
-4. Replace mock server with real backend when ready
-5. Keep schemas in sync as API evolves
+1. Define your data models using Zod schemas
+2. Create API endpoints with `defineEndpoint` for each route
+3. Generate type-safe API client for frontend development
+4. Add custom mocks with `defineMock` for realistic test data
+5. Run mock server for immediate frontend testing
+6. Replace mock server with real backend when ready
+7. Keep endpoint definitions in sync as API evolves
 
 ## Advanced Usage
 
@@ -293,22 +304,32 @@ const schema = defineApiSchema({
 You can provide custom mock implementations for specific endpoints:
 
 ```ts
-const customMocks = {
-  '@get/users/:id': params => ({
-    id: params.id,
+import { faker } from '@faker-js/faker'
+
+// Custom mock with parameters
+getUserById.defineMock({
+  mockFn: ({ inputs }) => ({
+    id: inputs.param.id,
     personalNumber: faker.string.numeric(12),
     name: faker.person.fullName(),
     givenName: faker.person.firstName(),
     surname: faker.person.lastName(),
-  }),
-  '@get/users': () => Array.from({ length: 10 }, (_, i) => ({
-    id: String(i + 1),
-    personalNumber: faker.string.numeric(12),
-    name: faker.person.fullName(),
-    givenName: faker.person.firstName(),
-    surname: faker.person.lastName(),
-  }))
-}
+  })
+})
+
+// Custom mock with faker shorthand
+getUsers.defineMock({
+  mockFn: {
+    length: 10,
+    faker: () => ({
+      id: faker.string.uuid(),
+      personalNumber: faker.string.numeric(12),
+      name: faker.person.fullName(),
+      givenName: faker.person.firstName(),
+      surname: faker.person.lastName(),
+    })
+  }
+})
 ```
 
 ### Error Handling
@@ -317,7 +338,7 @@ The API client includes built-in error handling and validation:
 
 ```ts
 try {
-  const user = await apiClient('@get/users/:id', { params: { id: 'invalid' } })
+  const user = await apiClient('@get/users/:id', { param: { id: 'invalid' } })
 }
 catch (error) {
   if (error.status === 404) {

@@ -3,9 +3,9 @@ import { HTTPException } from 'hono/http-exception'
 import { jwt } from 'hono/jwt'
 import { generateMockApi } from 'mock-dash'
 import { zocker } from 'zocker'
-import * as apiSchema from '@/api/schemas'
+import * as apiSchema from '../schemas'
 
-const { app } = generateMockApi(apiSchema, s => zocker(s).generate(), {
+const { app } = generateMockApi(apiSchema, (s) => zocker(s).generate(), {
   addMiddleware: (app) => {
     app.onError((err, c) => {
       if (err instanceof HTTPException && err.status === 401) {

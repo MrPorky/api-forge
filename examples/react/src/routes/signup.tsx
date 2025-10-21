@@ -1,12 +1,13 @@
-import type { AriaAttributes, FormEventHandler } from 'react'
-import type { authSchema } from '@/api/schemas/auth-schema'
+import type { signUp } from '@examples/shared'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { isValidationError } from 'mock-dash'
+import type { AriaAttributes, FormEventHandler } from 'react'
 import { useState } from 'react'
 import z from 'zod'
 import { apiClient } from '@/api/api-client'
 import { CenterLayout } from '@/components/center-layout/center-layout'
 import { ErrorParagraph } from '@/components/error-paragraph/error-paragraph'
+import { useAuth } from '@/hooks/use-auth'
 
 export const Route = createFileRoute('/signup')({
   component: RouteComponent,
@@ -15,24 +16,28 @@ export const Route = createFileRoute('/signup')({
   }),
 })
 
-type JSON = typeof authSchema.$inferInputJson['@post/auth/sign-up/email']
+type JSON = typeof signUp.$inferInputJson
 
 function RouteComponent() {
   const navigate = useNavigate()
   const { redirect } = Route.useSearch()
+  const { getSession } = useAuth()
 
-  const [errors, setErrors] = useState<ReturnType<typeof z.treeifyError<JSON>>>({
-    errors: [],
-    properties: {},
-  })
+  const [errors, setErrors] = useState<ReturnType<typeof z.treeifyError<JSON>>>(
+    {
+      errors: [],
+      properties: {},
+    },
+  )
 
-  const handleSubmit: FormEventHandler<HTMLFormElement> = async (
-    event,
-  ) => {
+  const handleSubmit: FormEventHandler<HTMLFormElement> = async (event) => {
     setErrors({ errors: [], properties: {} })
 
     event.preventDefault()
-    const formData = new FormData(event.currentTarget, (event.nativeEvent as SubmitEvent).submitter)
+    const formData = new FormData(
+      event.currentTarget,
+      (event.nativeEvent as SubmitEvent).submitter,
+    )
     const data: JSON = {
       name: formData.get('name') as string,
       email: formData.get('email') as string,
@@ -42,15 +47,14 @@ function RouteComponent() {
     try {
       await apiClient('@post/auth/sign-up/email', { json: data })
 
+      getSession()
       navigate({
         to: redirect,
       })
-    }
-    catch (error) {
+    } catch (error) {
       if (isValidationError(error)) {
         setErrors(z.treeifyError(error.validationErrors as z.ZodError<JSON>))
-      }
-      else {
+      } else {
         setErrors({
           errors: ['Could not signup'],
           properties: {},
@@ -87,10 +91,11 @@ function RouteComponent() {
               name="name"
               {...addFieldErrors('name')}
             />
-            {(errors.properties?.name?.errors ?? []).map(error => (
-              <small id="name-helper" key={error}>{error}</small>
+            {(errors.properties?.name?.errors ?? []).map((error) => (
+              <small id="name-helper" key={error}>
+                {error}
+              </small>
             ))}
-
           </label>
           <label>
             Email
@@ -103,10 +108,11 @@ function RouteComponent() {
               name="email"
               {...addFieldErrors('email')}
             />
-            {(errors.properties?.email?.errors ?? []).map(error => (
-              <small id="email-helper" key={error}>{error}</small>
+            {(errors.properties?.email?.errors ?? []).map((error) => (
+              <small id="email-helper" key={error}>
+                {error}
+              </small>
             ))}
-
           </label>
           <label>
             Password
@@ -118,20 +124,23 @@ function RouteComponent() {
               type="password"
               name="password"
               {...addFieldErrors('password')}
-
             />
-            {(errors.properties?.password?.errors ?? []).map(error => (
-              <small id="password-helper" key={error}>{error}</small>
+            {(errors.properties?.password?.errors ?? []).map((error) => (
+              <small id="password-helper" key={error}>
+                {error}
+              </small>
             ))}
           </label>
           <button type="submit">Signin</button>
 
-          {(errors.errors).map(error => (
+          {errors.errors.map((error) => (
             <ErrorParagraph key={error}>{error}</ErrorParagraph>
           ))}
           <small>
             Already have an account?
-            <Link to="/signin" search={{ redirect }}>signin</Link>
+            <Link to="/signin" search={{ redirect }}>
+              signin
+            </Link>
           </small>
         </form>
       </article>

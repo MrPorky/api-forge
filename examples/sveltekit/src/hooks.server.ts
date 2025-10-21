@@ -1,5 +1,5 @@
+import { userModel } from '@examples/shared'
 import type { Handle } from '@sveltejs/kit'
-import { userModel } from '$lib/models/user'
 import { decode } from 'hono/jwt'
 
 /** @type {import('@sveltejs/kit').Handle} */

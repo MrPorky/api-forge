@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { isApiError, isMockError, isNetworkError, isValidationError } from '../error-guards'
+import {
+  isApiError,
+  isMockError,
+  isNetworkError,
+  isValidationError,
+} from '../error-guards'
 import { ApiError, MockError, NetworkError, ValidationError } from '../errors'
 
 describe('errors', () => {
@@ -31,7 +36,11 @@ describe('errors', () => {
       const result = schema.safeParse({ name: 123 })
 
       if (!result.success) {
-        const error = new ValidationError('Validation failed', result.error, 'request')
+        const error = new ValidationError(
+          'Validation failed',
+          result.error,
+          'request',
+        )
 
         expect(error.name).toBe('ValidationError')
         expect(error.validationType).toBe('request')
@@ -48,7 +57,11 @@ describe('errors', () => {
       const result = schema.safeParse({ name: 123, email: 'invalid' })
 
       if (!result.success) {
-        const error = new ValidationError('Validation failed', result.error, 'request')
+        const error = new ValidationError(
+          'Validation failed',
+          result.error,
+          'request',
+        )
         const fieldErrors = error.getFieldErrors()
 
         expect(fieldErrors).toBeDefined()
@@ -66,12 +79,16 @@ describe('errors', () => {
       const result = schema.safeParse({ name: 123, age: -1 })
 
       if (!result.success) {
-        const error = new ValidationError('Validation failed', result.error, 'request')
+        const error = new ValidationError(
+          'Validation failed',
+          result.error,
+          'request',
+        )
         const messages = error.getAllErrorMessages()
 
         expect(Array.isArray(messages)).toBe(true)
         expect(messages.length).toBeGreaterThan(0)
-        expect(messages.some(msg => msg.includes('name'))).toBe(true)
+        expect(messages.some((msg) => msg.includes('name'))).toBe(true)
       }
     })
 
@@ -80,9 +97,14 @@ describe('errors', () => {
       const result = schema.safeParse({ name: 123 })
 
       if (!result.success) {
-        const error = new ValidationError('Custom validation error', result.error, 'response', {
-          status: 422,
-        })
+        const error = new ValidationError(
+          'Custom validation error',
+          result.error,
+          'response',
+          {
+            status: 422,
+          },
+        )
 
         expect(error.status).toBe(422)
         expect(error.validationType).toBe('response')
@@ -161,7 +183,11 @@ describe('errors', () => {
       const result = schema.safeParse({ name: 123 })
 
       if (!result.success) {
-        const validationError = new ValidationError('Validation failed', result.error, 'request')
+        const validationError = new ValidationError(
+          'Validation failed',
+          result.error,
+          'request',
+        )
         const apiError = new ApiError('API error', 400)
 
         expect(isValidationError(validationError)).toBe(true)
@@ -183,7 +209,11 @@ describe('errors', () => {
       const result = schema.safeParse({ name: 123 })
 
       if (!result.success) {
-        const validationError = new ValidationError('Validation failed', result.error, 'request')
+        const validationError = new ValidationError(
+          'Validation failed',
+          result.error,
+          'request',
+        )
 
         expect(isValidationError(validationError)).toBe(true)
         expect(isApiError(validationError)).toBe(true) // Should also be true due to inheritance

@@ -1,8 +1,8 @@
 <script lang='ts'>
-  import type { PageProps } from './$types'
+import type { PageProps } from './$types'
 
-  const { data }: PageProps = $props()
-  const { products } = data
+const { data }: PageProps = $props()
+const { products } = data
 </script>
 
 <!-- Link to PicoCSS CDN for styling -->

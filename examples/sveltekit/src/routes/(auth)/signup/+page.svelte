@@ -1,62 +1,60 @@
 <script lang='ts'>
-  import type { authSchema } from '$lib/schemas/auth-schema'
-  import type { AriaAttributes } from 'svelte/elements'
-  import type { PageProps } from './$types'
-  import { goto } from '$app/navigation'
-  import { apiClient } from '$lib/api-client'
-  import CenterLayout from '$lib/components/CenterLayout.svelte'
-  import ErrorParagraph from '$lib/components/ErrorParagraph.svelte'
-  import { isValidationError } from 'mock-dash'
-  import z from 'zod'
+import type { signUp } from '@examples/shared'
+import { isValidationError } from 'mock-dash'
+import type { AriaAttributes } from 'svelte/elements'
+import z from 'zod'
+import { goto } from '$app/navigation'
+import { apiClient } from '$lib/api-client'
+import CenterLayout from '$lib/components/CenterLayout.svelte'
+import ErrorParagraph from '$lib/components/ErrorParagraph.svelte'
+import type { PageProps } from './$types'
 
-  const { data }: PageProps = $props()
-  const { redirect } = data
+const { data }: PageProps = $props()
+const { redirect } = data
 
-  type JSON = typeof authSchema.$inferInputJson['@post/auth/sign-up/email']
+type JSON = typeof signUp.$inferInputJson
 
-  let errors = $state<ReturnType<typeof z.treeifyError<JSON>>>({
-    errors: [],
-    properties: {},
-  })
+let errors = $state<ReturnType<typeof z.treeifyError<JSON>>>({
+  errors: [],
+  properties: {},
+})
 
-  async function handleSubmit(
-    event: SubmitEvent & { currentTarget: EventTarget & HTMLFormElement },
-  ) {
-    errors = { errors: [], properties: {} }
-    event.preventDefault()
-    const formData = new FormData(event.currentTarget, event.submitter)
-    // @ts-expect-error Typescript cant infere type
-    const data: JSON = Object.fromEntries(formData.entries())
+async function handleSubmit(
+  event: SubmitEvent & { currentTarget: EventTarget & HTMLFormElement },
+) {
+  errors = { errors: [], properties: {} }
+  event.preventDefault()
+  const formData = new FormData(event.currentTarget, event.submitter)
+  // @ts-expect-error Typescript cant infere type
+  const data: JSON = Object.fromEntries(formData.entries())
 
-    try {
-      await apiClient('@post/auth/sign-up/email', { json: data })
+  try {
+    await apiClient('@post/auth/sign-up/email', { json: data })
 
-      goto(redirect)
-    }
-    catch (error) {
-      if (isValidationError(error)) {
-        errors = z.treeifyError(error.validationErrors as z.ZodError<JSON>)
-      }
-      else {
-        errors = {
-          errors: ['Could not signin'],
-          properties: {},
-        }
+    goto(redirect)
+  } catch (error) {
+    if (isValidationError(error)) {
+      errors = z.treeifyError(error.validationErrors as z.ZodError<JSON>)
+    } else {
+      errors = {
+        errors: ['Could not signin'],
+        properties: {},
       }
     }
   }
+}
 
-  function addFieldErrors(key: keyof JSON) {
-    const err = errors.properties?.[key]
-    if (err) {
-      return {
-        'aria-invalid': 'true',
-        'aria-describedby': `${key}-helper`,
-      } satisfies AriaAttributes
-    }
-
-    return {}
+function addFieldErrors(key: keyof JSON) {
+  const err = errors.properties?.[key]
+  if (err) {
+    return {
+      'aria-invalid': 'true',
+      'aria-describedby': `${key}-helper`,
+    } satisfies AriaAttributes
   }
+
+  return {}
+}
 </script>
 
 <svelte:head>

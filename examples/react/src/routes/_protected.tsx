@@ -1,10 +1,10 @@
 import { createFileRoute, Link, Outlet, redirect } from '@tanstack/react-router'
-import favicon from '../../public/vite.svg'
+import favicon from '../../public/vite.svg?url'
 import styles from './_protected.module.css'
 
 export const Route = createFileRoute('/_protected')({
   component: RouteComponent,
-  beforeLoad: ({ context, location }) => {
+  beforeLoad: async ({ context, location }) => {
     if (!context.auth.isAuthenticated) {
       throw redirect({
         to: '/signin',
@@ -26,7 +26,11 @@ function RouteComponent() {
               <img className={styles.logo} src={favicon} alt="svelte logo" />
             </Link>
             <ul>
-              <li><Link className="contrast" to="/products">Products</Link></li>
+              <li>
+                <Link className="contrast" to="/products">
+                  Products
+                </Link>
+              </li>
             </ul>
           </nav>
         </div>
