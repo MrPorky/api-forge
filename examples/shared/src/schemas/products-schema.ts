@@ -8,7 +8,7 @@ export const getProducts = defineEndpoint('@get/products', {
 })
 
 if (process.env.NODE_ENV !== 'production') {
-  getProducts.defineMock(({
+  getProducts.defineMock({
     mockFn: {
       length: 5,
       faker: () => ({
@@ -18,5 +18,5 @@ if (process.env.NODE_ENV !== 'production') {
         description: faker.commerce.productDescription(),
       }),
     },
-  }))
+  })
 }

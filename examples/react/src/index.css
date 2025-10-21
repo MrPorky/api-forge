@@ -4,6 +4,7 @@ body > div {
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  /* biome-ignore lint/suspicious/noDuplicateProperties: with fallback */
   min-height: 100lvh;
 }
 

@@ -1,7 +1,12 @@
-import type { FakeFn } from './generate-mock-api'
 import z from 'zod'
+import type { FakeFn } from './generate-mock-api'
 
-export type CollectionOperation = 'list' | 'get' | 'create' | 'update' | 'delete'
+export type CollectionOperation =
+  | 'list'
+  | 'get'
+  | 'create'
+  | 'update'
+  | 'delete'
 
 interface CollectionMetaBase {
   op: CollectionOperation
@@ -22,22 +27,30 @@ interface CollectionCreateMeta<T extends z.ZodType> extends CollectionMetaBase {
   data: z.infer<T>
 }
 
-interface CollectionUpdateMeta<T extends z.ZodType, K extends keyof z.infer<T>> extends CollectionMetaBase {
+interface CollectionUpdateMeta<T extends z.ZodType, K extends keyof z.infer<T>>
+  extends CollectionMetaBase {
   op: 'update'
   idParam: z.infer<T>[K]
   data: Partial<z.infer<T>>
 }
 
-export type CollectionMeta<T extends z.ZodType, K extends keyof z.infer<T>> = CollectionListMeta
+export type CollectionMeta<T extends z.ZodType, K extends keyof z.infer<T>> =
+  | CollectionListMeta
   | CollectionGetMeta<T>
   | CollectionCreateMeta<T>
   | CollectionUpdateMeta<T, K>
-export interface CollectionDefinition<Z extends z.ZodType, K extends keyof z.infer<Z> = keyof z.infer<Z>> {
+export interface CollectionDefinition<
+  Z extends z.ZodType,
+  K extends keyof z.infer<Z> = keyof z.infer<Z>,
+> {
   size: number
   idKey: K
 }
 
-export function defineApiCollection<T extends z.ZodType, K extends keyof z.infer<T>>(schema: T, def: CollectionDefinition<T, K>) {
+export function defineApiCollection<
+  T extends z.ZodType,
+  K extends keyof z.infer<T>,
+>(schema: T, def: CollectionDefinition<T, K>) {
   return new Collection(schema, def)
 }
 
@@ -53,8 +66,7 @@ export class Collection<T extends z.ZodType, K extends keyof z.infer<T>> {
   }
 
   initialize(fake: FakeFn) {
-    if (this.isInitialized)
-      return
+    if (this.isInitialized) return
 
     for (let i = 0; i < this.def.size; i++) {
       this.collection.push(fake(this.schema))
@@ -68,7 +80,9 @@ export class Collection<T extends z.ZodType, K extends keyof z.infer<T>> {
     if (!this.isInitialized)
       throw new Error('Collection not initialized. Call initialize() first.')
 
-    return z.array(this.schema).parse(JSON.parse(JSON.stringify(this.collection)))
+    return z
+      .array(this.schema)
+      .parse(JSON.parse(JSON.stringify(this.collection)))
   }
 
   call(meta: CollectionMeta<T, K>) {
@@ -77,11 +91,11 @@ export class Collection<T extends z.ZodType, K extends keyof z.infer<T>> {
 
     if (meta.op === 'list') {
       return this.getCollection()
-    }
-    else if (meta.op === 'get') {
-      return this.getCollection().find(item => item[meta.idKey ?? this.def.idKey] === meta.idParam)
-    }
-    else if (meta.op === 'create') {
+    } else if (meta.op === 'get') {
+      return this.getCollection().find(
+        (item) => item[meta.idKey ?? this.def.idKey] === meta.idParam,
+      )
+    } else if (meta.op === 'create') {
       const newItem = this.schema.parse({})
       this.collection.push(newItem)
       return newItem

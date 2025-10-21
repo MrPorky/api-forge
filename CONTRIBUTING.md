@@ -76,7 +76,7 @@ src/
 ### Code Style
 
 - TypeScript with strict type checking enabled
-- ESLint with @antfu/eslint-config preset
+- Biome for formatting and linting
 - Named exports preferred over default exports
 - Type-only imports where applicable (`import type`)
 
@@ -126,7 +126,7 @@ src/
 - **Zod** - Schema validation and type inference
 - **Hono** - Lightweight web framework for mock servers
 - **Vitest** - Testing framework
-- **ESLint** - Code linting
+- **Biome** - Code linting and formatting
 - **pnpm** - Package manager
 
 ## Release Process

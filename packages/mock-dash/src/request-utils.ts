@@ -4,10 +4,10 @@
  * Arrays are serialized by repeating the key for each value, and nested objects
  * are flattened using bracket notation (e.g., `filter[name]=value`).
  */
-export function serializeQueryParams(params: Record<string, any>): string {
+export function serializeQueryParams(params: Record<string, unknown>): string {
   const searchParams = new URLSearchParams()
 
-  function addParam(key: string, value: any) {
+  function addParam(key: string, value: unknown) {
     if (value === undefined || value === null) {
       return
     }
@@ -21,14 +21,12 @@ export function serializeQueryParams(params: Record<string, any>): string {
           searchParams.append(key, String(item))
         }
       })
-    }
-    else if (typeof value === 'object' && value !== null) {
+    } else if (typeof value === 'object' && value !== null) {
       // Handle nested objects by flattening them
       Object.entries(value).forEach(([nestedKey, nestedValue]) => {
         addParam(`${key}[${nestedKey}]`, nestedValue)
       })
-    }
-    else {
+    } else {
       searchParams.append(key, String(value))
     }
   }
@@ -45,10 +43,10 @@ export function serializeQueryParams(params: Record<string, any>): string {
  * nested objects, and null/undefined values appropriately. This is used for
  * multipart/form-data requests, particularly for file uploads and complex form submissions.
  */
-export function buildFormData(data: Record<string, any>): FormData {
+export function buildFormData(data: Record<string, unknown>): FormData {
   const formData = new FormData()
 
-  function addFormField(key: string, value: any) {
+  function addFormField(key: string, value: unknown) {
     if (value === undefined || value === null) {
       return
     }
@@ -58,23 +56,23 @@ export function buildFormData(data: Record<string, any>): FormData {
         if (item !== undefined && item !== null) {
           if (item instanceof File) {
             formData.append(key, item, item.name)
-          }
-          else {
+          } else {
             formData.append(key, String(item))
           }
         }
       })
-    }
-    else if (typeof value === 'object' && value !== null && !(value instanceof File)) {
+    } else if (
+      typeof value === 'object' &&
+      value !== null &&
+      !(value instanceof File)
+    ) {
       // Handle nested objects by flattening them
       Object.entries(value).forEach(([nestedKey, nestedValue]) => {
         addFormField(`${key}[${nestedKey}]`, nestedValue)
       })
-    }
-    else if (value instanceof File) {
+    } else if (value instanceof File) {
       formData.append(key, value, value.name)
-    }
-    else {
+    } else {
       formData.append(key, String(value))
     }
   }

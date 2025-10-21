@@ -7,14 +7,16 @@ import { generateMockApi } from '../generate-mock-api'
 describe('generate-mock-api integration tests', () => {
   describe('http request/response cycle', () => {
     it('should handle GET request with default faker', async () => {
-      const schema = ({
+      const schema = {
         getUsers: defineEndpoint('@get/users', {
-          response: z.array(z.object({
-            id: z.string(),
-            name: z.string(),
-          })),
+          response: z.array(
+            z.object({
+              id: z.string(),
+              name: z.string(),
+            }),
+          ),
         }),
-      })
+      }
 
       const mockFaker = vi.fn().mockReturnValue([
         { id: '1', name: 'John Doe' },
@@ -30,11 +32,13 @@ describe('generate-mock-api integration tests', () => {
         { id: '1', name: 'John Doe' },
         { id: '2', name: 'Jane Smith' },
       ])
-      expect(mockFaker).toHaveBeenCalledWith(schema.getUsers.getEndpoint().response)
+      expect(mockFaker).toHaveBeenCalledWith(
+        schema.getUsers.getEndpoint().response,
+      )
     })
 
     it('should handle POST request with JSON input validation', async () => {
-      const schema = ({
+      const schema = {
         postUsers: defineEndpoint('@post/users', {
           input: {
             json: z.object({
@@ -48,7 +52,7 @@ describe('generate-mock-api integration tests', () => {
             email: z.string(),
           }),
         }),
-      })
+      }
 
       const mockFaker = vi.fn().mockReturnValue({
         id: '123',
@@ -76,19 +80,19 @@ describe('generate-mock-api integration tests', () => {
     })
 
     it('should handle path parameters', async () => {
-      const schema = ({
+      const schema = {
         getUser: defineEndpoint('@get/users/:id', {
           input: {
-            param: ({
+            param: {
               id: z.string(),
-            }),
+            },
           },
           response: z.object({
             id: z.string(),
             name: z.string(),
           }),
         }),
-      })
+      }
 
       const mockFaker = vi.fn().mockReturnValue({
         id: '123',
@@ -107,24 +111,24 @@ describe('generate-mock-api integration tests', () => {
     })
 
     it('should handle query parameters', async () => {
-      const schema = ({
+      const schema = {
         getUsers: defineEndpoint('@get/users', {
           input: {
-            query: ({
+            query: {
               page: z.string().optional(),
               limit: z.string().optional(),
-            }),
+            },
           },
-          response: z.array(z.object({
-            id: z.string(),
-            name: z.string(),
-          })),
+          response: z.array(
+            z.object({
+              id: z.string(),
+              name: z.string(),
+            }),
+          ),
         }),
-      })
+      }
 
-      const mockFaker = vi.fn().mockReturnValue([
-        { id: '1', name: 'John' },
-      ])
+      const mockFaker = vi.fn().mockReturnValue([{ id: '1', name: 'John' }])
 
       const { app } = generateMockApi(schema, mockFaker)
       const response = await app.request('/users?page=1&limit=10')
@@ -135,11 +139,11 @@ describe('generate-mock-api integration tests', () => {
     })
 
     it('should handle custom faker with context access', async () => {
-      const schema = ({
+      const schema = {
         getUser: defineEndpoint('@get/users/:id', {
           input: {
-            param: ({ id: z.string() }),
-            query: ({ include: z.string().optional() }),
+            param: { id: z.string() },
+            query: { include: z.string().optional() },
           },
           response: z.object({
             id: z.string(),
@@ -147,9 +151,9 @@ describe('generate-mock-api integration tests', () => {
             details: z.string().optional(),
           }),
         }),
-      })
+      }
 
-      const customFaker = vi.fn().mockImplementation(context => ({
+      const customFaker = vi.fn().mockImplementation((context) => ({
         id: context.inputs.param.id,
         name: `User ${context.inputs.param.id}`,
         details: context.inputs.query.include ? 'Detailed info' : undefined,
@@ -182,16 +186,18 @@ describe('generate-mock-api integration tests', () => {
     })
 
     it('should handle array faker with length specification', async () => {
-      const schema = ({
+      const schema = {
         getUsers: defineEndpoint('@get/users', {
-          response: z.array(z.object({
-            id: z.string(),
-            name: z.string(),
-          })),
+          response: z.array(
+            z.object({
+              id: z.string(),
+              name: z.string(),
+            }),
+          ),
         }),
-      })
+      }
 
-      const itemFaker = vi.fn().mockImplementation((context, index) => ({
+      const itemFaker = vi.fn().mockImplementation((_context, index) => ({
         id: `user-${index}`,
         name: `User ${index}`,
       }))
@@ -215,13 +221,13 @@ describe('generate-mock-api integration tests', () => {
     })
 
     it('should handle MockError responses', async () => {
-      const schema = ({
+      const schema = {
         getError: defineEndpoint('@get/error', {
           response: z.object({
             message: z.string(),
           }),
         }),
-      })
+      }
 
       const customFaker = vi.fn().mockImplementation(() => {
         throw new MockError('Not found', 404)
@@ -240,20 +246,20 @@ describe('generate-mock-api integration tests', () => {
     })
 
     it('should handle form data input', async () => {
-      const schema = ({
+      const schema = {
         postUpload: defineEndpoint('@post/upload', {
           input: {
-            form: ({
+            form: {
               name: z.string(),
               description: z.string().optional(),
-            }),
+            },
           },
           response: z.object({
             id: z.string(),
             filename: z.string(),
           }),
         }),
-      })
+      }
 
       const mockFaker = vi.fn().mockReturnValue({
         id: '123',
@@ -280,7 +286,7 @@ describe('generate-mock-api integration tests', () => {
     })
 
     it('should handle multiple HTTP methods on same path', async () => {
-      const schema = ({
+      const schema = {
         getUsers: defineEndpoint('@get/users', {
           response: z.array(z.object({ id: z.string(), name: z.string() })),
         }),
@@ -290,9 +296,10 @@ describe('generate-mock-api integration tests', () => {
           },
           response: z.object({ id: z.string(), name: z.string() }),
         }),
-      })
+      }
 
-      const mockFaker = vi.fn()
+      const mockFaker = vi
+        .fn()
         .mockReturnValueOnce([{ id: '1', name: 'Existing User' }])
         .mockReturnValueOnce({ id: '2', name: 'New User' })
 
@@ -316,11 +323,11 @@ describe('generate-mock-api integration tests', () => {
     })
 
     it('should handle base path configuration', async () => {
-      const schema = ({
+      const schema = {
         getUsers: defineEndpoint('@get/users', {
           response: z.array(z.object({ id: z.string() })),
         }),
-      })
+      }
 
       const mockFaker = vi.fn().mockReturnValue([{ id: '1' }])
       const { app } = generateMockApi(schema, mockFaker, {
@@ -335,14 +342,14 @@ describe('generate-mock-api integration tests', () => {
     })
 
     it('should handle shared mock context between requests', async () => {
-      const schema = ({
+      const schema = {
         postCounter: defineEndpoint('@post/counter', {
           response: z.object({ count: z.number() }),
         }),
         getCounter: defineEndpoint('@get/counter', {
           response: z.object({ count: z.number() }),
         }),
-      })
+      }
 
       const postFaker = vi.fn().mockImplementation((context) => {
         const currentCount = context.mockContext.get('count') || 0

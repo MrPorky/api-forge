@@ -1,5 +1,5 @@
 <script lang='ts'>
-  const { msg = 'Error msg' } = $props()
+const { msg = 'Error msg' } = $props()
 </script>
 
 <p> {msg} </p>

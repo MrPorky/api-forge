@@ -1,11 +1,11 @@
 import type { Context } from 'hono'
-import type { Session } from '../models/session'
-import type { User } from '../models/user'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import { sign } from 'hono/jwt'
 import { defineEndpoint, MockError } from 'mock-dash'
 import z from 'zod'
+import type { Session } from '../models/session'
 import { sessionModel } from '../models/session'
+import type { User } from '../models/user'
 import { userModel } from '../models/user'
 
 export const signUp = defineEndpoint('@post/auth/sign-up/email', {
@@ -111,14 +111,19 @@ if (process.env.NODE_ENV !== 'production') {
         return { success: true }
       }
 
-      const sessionParseResult = z.array(sessionModel.shape.session).safeParse(mockContext.get(`session.${user.id}`))
+      const sessionParseResult = z
+        .array(sessionModel.shape.session)
+        .safeParse(mockContext.get(`session.${user.id}`))
       const sessions = sessionParseResult.data
       if (!sessions) {
         return { success: true }
       }
 
       if (jwt) {
-        mockContext.set(`session.${user.id}`, sessions.filter(s => jwt.includes(s.token)))
+        mockContext.set(
+          `session.${user.id}`,
+          sessions.filter((s) => jwt.includes(s.token)),
+        )
       }
 
       return { success: true }
@@ -134,13 +139,15 @@ if (process.env.NODE_ENV !== 'production') {
       }
 
       const user = userParseResult.data
-      const sessionParseResult = z.array(sessionModel.shape.session).safeParse(mockContext.get(`session.${user.id}`))
+      const sessionParseResult = z
+        .array(sessionModel.shape.session)
+        .safeParse(mockContext.get(`session.${user.id}`))
 
       if (!sessionParseResult.success) {
         throw new MockError('Could not get session', 401)
       }
 
-      const session = sessionParseResult.data?.find(x => x.userId === user.id)
+      const session = sessionParseResult.data?.find((x) => x.userId === user.id)
 
       if (!session) {
         throw new MockError('Could not get session', 401)
@@ -153,17 +160,23 @@ if (process.env.NODE_ENV !== 'production') {
     },
   })
 
-  async function createNewSession(honoContext: Context, mockContext: Map<string, unknown>, user: User) {
+  async function createNewSession(
+    honoContext: Context,
+    mockContext: Map<string, unknown>,
+    user: User,
+  ) {
     const userAgent = honoContext.req.header('User-Agent') ?? ''
 
     const jwt = await sign(user, 'mockJwtSecret')
     const now = new Date()
 
-    const parseResult = z.array(sessionModel.shape.session).safeParse(mockContext.get(`session.${user.id}`))
+    const parseResult = z
+      .array(sessionModel.shape.session)
+      .safeParse(mockContext.get(`session.${user.id}`))
 
     const newSession: Session['session'] = {
       createdAt: now.toISOString(),
-      expiersAt: (new Date(now.getDate() + 1)).toISOString(),
+      expiersAt: new Date(now.getDate() + 1).toISOString(),
       id: crypto.randomUUID(),
       ipAddress: '127.0.0.1',
       token: jwt,

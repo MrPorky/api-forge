@@ -26,7 +26,11 @@ function RouteComponent() {
               <img className={styles.logo} src={favicon} alt="svelte logo" />
             </Link>
             <ul>
-              <li><Link className="contrast" to="/products">Products</Link></li>
+              <li>
+                <Link className="contrast" to="/products">
+                  Products
+                </Link>
+              </li>
             </ul>
           </nav>
         </div>

@@ -3,8 +3,5 @@ import { visualizer } from 'rollup-plugin-visualizer'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  plugins: [
-    sveltekit(),
-    visualizer(),
-  ],
+  plugins: [sveltekit(), visualizer()],
 })

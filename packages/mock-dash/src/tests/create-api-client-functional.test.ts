@@ -45,17 +45,17 @@ describe('create-api-client functional tests', () => {
     })
 
     it('should handle path parameters correctly', async () => {
-      const apiSchema = ({
+      const apiSchema = {
         getUser: defineEndpoint('@get/users/:id', {
           input: {
-            param: ({ id: z.string() }),
+            param: { id: z.string() },
           },
           response: z.object({
             id: z.string(),
             name: z.string(),
           }),
         }),
-      })
+      }
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -87,7 +87,7 @@ describe('create-api-client functional tests', () => {
 
   describe('post requests', () => {
     it('should make POST request with JSON body', async () => {
-      const apiSchema = ({
+      const apiSchema = {
         postUsers: defineEndpoint('@post/users', {
           input: {
             json: z.object({
@@ -101,12 +101,16 @@ describe('create-api-client functional tests', () => {
             email: z.string(),
           }),
         }),
-      })
+      }
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 201,
-        json: async () => ({ id: '1', name: 'John', email: 'john@example.com' }),
+        json: async () => ({
+          id: '1',
+          name: 'John',
+          email: 'john@example.com',
+        }),
       } as Response)
 
       const client = createApiClient({
@@ -128,24 +132,28 @@ describe('create-api-client functional tests', () => {
           body: JSON.stringify({ name: 'John', email: 'john@example.com' }),
         }),
       )
-      expect(result).toEqual({ id: '1', name: 'John', email: 'john@example.com' })
+      expect(result).toEqual({
+        id: '1',
+        name: 'John',
+        email: 'john@example.com',
+      })
     })
 
     it('should handle form data requests', async () => {
-      const apiSchema = ({
+      const apiSchema = {
         postUpload: defineEndpoint('@post/upload', {
           input: {
-            form: ({
+            form: {
               name: z.string(),
               file: z.file(),
-            }),
+            },
           },
           response: z.object({
             id: z.string(),
             filename: z.string(),
           }),
         }),
-      })
+      }
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -176,11 +184,11 @@ describe('create-api-client functional tests', () => {
 
   describe('error handling', () => {
     it('should throw ApiError for HTTP error responses', async () => {
-      const apiSchema = ({
+      const apiSchema = {
         getUsers: defineEndpoint('@get/users', {
           response: z.array(z.object({ id: z.string(), name: z.string() })),
         }),
-      })
+      }
 
       const errorResponse = {
         ok: false,
@@ -204,19 +212,20 @@ describe('create-api-client functional tests', () => {
       // Test the specific error message in a separate call
       try {
         await client('@get/users')
-      }
-      catch (error) {
+      } catch (error) {
         expect(error).toBeInstanceOf(ApiError)
-        expect((error as ApiError).message).toContain('API call failed with status 404')
+        expect((error as ApiError).message).toContain(
+          'API call failed with status 404',
+        )
       }
     })
 
     it('should throw NetworkError for network failures', async () => {
-      const apiSchema = ({
+      const apiSchema = {
         getUsers: defineEndpoint('@get/users', {
           response: z.array(z.object({ id: z.string(), name: z.string() })),
         }),
-      })
+      }
 
       mockFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'))
 
@@ -229,7 +238,7 @@ describe('create-api-client functional tests', () => {
     })
 
     it('should throw ValidationError for request validation failures', async () => {
-      const apiSchema = ({
+      const apiSchema = {
         postUsers: defineEndpoint('@post/users', {
           input: {
             json: z.object({
@@ -243,25 +252,27 @@ describe('create-api-client functional tests', () => {
             email: z.string(),
           }),
         }),
-      })
+      }
 
       const client = createApiClient({
         apiSchema,
         baseURL: 'https://api.example.com',
       })
 
-      await expect(client('@post/users', {
-        // @ts-expect-error Testing invalid input
-        json: { name: 123, email: 'invalid-email' },
-      })).rejects.toThrow(ValidationError)
+      await expect(
+        client('@post/users', {
+          // @ts-expect-error Testing invalid input
+          json: { name: 123, email: 'invalid-email' },
+        }),
+      ).rejects.toThrow(ValidationError)
     })
 
     it('should throw ValidationError for response validation failures', async () => {
-      const apiSchema = ({
+      const apiSchema = {
         getUsers: defineEndpoint('@get/users', {
           response: z.array(z.object({ id: z.string(), name: z.string() })),
         }),
-      })
+      }
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -280,11 +291,11 @@ describe('create-api-client functional tests', () => {
 
   describe('interceptors', () => {
     it('should apply request interceptors', async () => {
-      const apiSchema = ({
+      const apiSchema = {
         getUsers: defineEndpoint('@get/users', {
           response: z.array(z.object({ id: z.string(), name: z.string() })),
         }),
-      })
+      }
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -298,7 +309,7 @@ describe('create-api-client functional tests', () => {
       })
 
       // Add request interceptor
-      client.interceptors.request.addInterceptor((context, options) => {
+      client.interceptors.request.addInterceptor((_context, options) => {
         return {
           ...options,
           headers: {
@@ -321,11 +332,11 @@ describe('create-api-client functional tests', () => {
     })
 
     it('should apply response interceptors', async () => {
-      const apiSchema = ({
+      const apiSchema = {
         getUsers: defineEndpoint('@get/users', {
           response: z.array(z.object({ id: z.string(), name: z.string() })),
         }),
-      })
+      }
 
       const originalResponse = {
         ok: true,
@@ -341,7 +352,7 @@ describe('create-api-client functional tests', () => {
       })
 
       // Add response interceptor
-      const interceptorSpy = vi.fn((context, response) => response)
+      const interceptorSpy = vi.fn((_context, response) => response)
       client.interceptors.response.addInterceptor(interceptorSpy)
 
       await client('@get/users')

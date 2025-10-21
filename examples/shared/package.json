@@ -18,7 +18,6 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist node_modules",
-    "lint": "eslint src",
     "check": "tsc --noEmit"
   },
   "dependencies": {

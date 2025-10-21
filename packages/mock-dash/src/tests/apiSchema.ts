@@ -8,10 +8,12 @@ export const getUsers = defineEndpoint('@get/users', {
       limit: z.string().optional(),
     },
   },
-  response: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-  })),
+  response: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+    }),
+  ),
 })
 
 export const getUser = defineEndpoint('@get/users/:id', {
@@ -24,10 +26,12 @@ export const getUser = defineEndpoint('@get/users/:id', {
       limit: z.string().optional(),
     },
   },
-  response: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-  })),
+  response: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+    }),
+  ),
 })
 
 export const createUser = defineEndpoint('@post/users', {

@@ -1,65 +1,63 @@
 <script lang='ts'>
-  import type { signIn } from '@examples/shared'
-  import type { AriaAttributes } from 'svelte/elements'
-  import type { PageProps } from './$types'
-  import { goto } from '$app/navigation'
-  import { apiClient } from '$lib/api-client'
-  import CenterLayout from '$lib/components/CenterLayout.svelte'
-  import ErrorParagraph from '$lib/components/ErrorParagraph.svelte'
-  import { isValidationError } from 'mock-dash'
-  import z from 'zod'
+import type { signIn } from '@examples/shared'
+import { isValidationError } from 'mock-dash'
+import type { AriaAttributes } from 'svelte/elements'
+import z from 'zod'
+import { goto } from '$app/navigation'
+import { apiClient } from '$lib/api-client'
+import CenterLayout from '$lib/components/CenterLayout.svelte'
+import ErrorParagraph from '$lib/components/ErrorParagraph.svelte'
+import type { PageProps } from './$types'
 
-  const { data }: PageProps = $props()
-  const { redirect } = data
+const { data }: PageProps = $props()
+const { redirect } = data
 
-  type JSON = typeof signIn.$inferInputJson
+type JSON = typeof signIn.$inferInputJson
 
-  let errors = $state<ReturnType<typeof z.treeifyError<JSON>>>({
-    errors: [],
-    properties: {},
-  })
+let errors = $state<ReturnType<typeof z.treeifyError<JSON>>>({
+  errors: [],
+  properties: {},
+})
 
-  async function handleSubmit(
-    event: SubmitEvent & { currentTarget: EventTarget & HTMLFormElement },
-  ) {
-    errors = { errors: [], properties: {} }
-    event.preventDefault()
-    const formData = new FormData(event.currentTarget, event.submitter)
-    const data: JSON = {
-      email: formData.get('email') as string,
-      password: formData.get('password') as string,
-      rememberMe: formData.get('remember') !== undefined,
-    }
+async function handleSubmit(
+  event: SubmitEvent & { currentTarget: EventTarget & HTMLFormElement },
+) {
+  errors = { errors: [], properties: {} }
+  event.preventDefault()
+  const formData = new FormData(event.currentTarget, event.submitter)
+  const data: JSON = {
+    email: formData.get('email') as string,
+    password: formData.get('password') as string,
+    rememberMe: formData.get('remember') !== undefined,
+  }
 
-    try {
-      await apiClient('@post/auth/sign-in/email', { json: data })
+  try {
+    await apiClient('@post/auth/sign-in/email', { json: data })
 
-      goto(redirect)
-    }
-    catch (error) {
-      if (isValidationError(error)) {
-        errors = z.treeifyError(error.validationErrors as z.ZodError<JSON>)
-      }
-      else {
-        errors = {
-          errors: ['Could not signin'],
-          properties: {},
-        }
+    goto(redirect)
+  } catch (error) {
+    if (isValidationError(error)) {
+      errors = z.treeifyError(error.validationErrors as z.ZodError<JSON>)
+    } else {
+      errors = {
+        errors: ['Could not signin'],
+        properties: {},
       }
     }
   }
+}
 
-  function addFieldErrors(key: keyof JSON) {
-    const err = errors.properties?.[key]
-    if (err) {
-      return {
-        'aria-invalid': 'true',
-        'aria-describedby': `${key}-helper`,
-      } satisfies AriaAttributes
-    }
-
-    return {}
+function addFieldErrors(key: keyof JSON) {
+  const err = errors.properties?.[key]
+  if (err) {
+    return {
+      'aria-invalid': 'true',
+      'aria-describedby': `${key}-helper`,
+    } satisfies AriaAttributes
   }
+
+  return {}
+}
 </script>
 
 <svelte:head>

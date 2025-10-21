@@ -10,8 +10,13 @@ function RouteComponent() {
       <h1>Welcome to mock-dash React example</h1>
       <p>
         Visit
-        <a target="_blank" rel="noopener noreferrer" href="https://github.com/MrPorky/mock-dash/">mock-dash</a>
-        {' '}
+        <a
+          target="_blank"
+          rel="noopener noreferrer"
+          href="https://github.com/MrPorky/mock-dash/"
+        >
+          mock-dash
+        </a>{' '}
         to read the documentation
       </p>
     </>

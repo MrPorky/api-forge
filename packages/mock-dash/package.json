@@ -41,7 +41,7 @@
     "clean": "rm -rf dist node_modules",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint",
+    "lint": "biome check --write",
     "check": "tsc --noEmit",
     "prepublishOnly": "pnpm run build"
   },

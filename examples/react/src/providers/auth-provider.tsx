@@ -15,8 +15,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       if (data) {
         setUser(data.user)
       }
-    }
-    catch {
+    } catch {
       setUser(null)
     }
   }, [])
@@ -25,16 +24,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
     getSession().then(() => setInitialLoading(false))
   }, [getSession])
 
-  const value = useMemo(() => ({
-    initialLoading,
-    isAuthenticated: !!user,
-    getSession,
-    user,
-  }), [initialLoading, user, getSession])
-
-  return (
-    <AuthContext value={value}>
-      {children}
-    </AuthContext>
+  const value = useMemo(
+    () => ({
+      initialLoading,
+      isAuthenticated: !!user,
+      getSession,
+      user,
+    }),
+    [initialLoading, user, getSession],
   )
+
+  return <AuthContext value={value}>{children}</AuthContext>
 }
