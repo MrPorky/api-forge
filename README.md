@@ -109,6 +109,65 @@ export const updateUser = defineEndpoint('@put/users/:id', {
 export * from './users'
 ```
 
+
+### Plain Text & Void Responses
+
+While most endpoints return JSON objects/arrays, MockDash also supports endpoints that return plain text (e.g. health checks, version strings) or no content at all (204 responses). The client automatically decides how to read the body based on the response schema you provide:
+
+Behavior:
+
+- If the endpoint's `response` is `z.string()` (including any formatted string like `z.email()`, `z.uuid()`, etc.), the client reads the body using `response.text()` and validates it with Zod.
+- If the endpoint's `response` is `z.void()`, the client does not attempt to parse a body (useful for 204 No Content / empty responses) and returns `undefined`.
+- For all other Zod schemas (objects, arrays, numbers, booleans, unions, etc.) the client parses the body as JSON and then validates it.
+
+Examples:
+
+```ts
+import { defineEndpoint } from 'mock-dash'
+import { z } from 'zod'
+
+// Plain text response (e.g. GET /version -> '1.2.3')
+export const getVersion = defineEndpoint('@get/version', {
+  response: z.string(),
+})
+
+// Email-formatted string response (parsed as text, still validated)
+export const getContactEmail = defineEndpoint('@get/support/email', {
+  response: z.email(),
+})
+
+// Void / empty response (e.g. 204 on successful logout)
+export const logout = defineEndpoint('@post/auth/logout', {
+  response: z.void(),
+})
+
+// Standard JSON response still works the same
+export const getUser = defineEndpoint('@get/users/:id', {
+  response: z.object({ id: z.string(), name: z.string() }),
+})
+```
+
+Usage in the client:
+
+```ts
+const version = await apiClient('@get/version')        // type: string
+const email = await apiClient('@get/support/email')    // type: string
+await apiClient('@post/auth/logout')                   // type: void (undefined)
+const user = await apiClient('@get/users/:id', { param: { id: '123' } })
+```
+
+Notes:
+
+- If a string endpoint actually returns JSON (e.g. '"value"'), it will not be parsed; you'll receive the raw text. Use a JSON schema (e.g. `z.object(...)`) if you expect JSON.
+- For numeric / boolean primitives, define a JSON shape (e.g. `{ value: z.number() }`) if the server returns JSON, or wrap the primitive in a string endpoint if the server returns raw text and you want to parse it yourself.
+- A `z.never()` response is not supported (it will always fail validation) and typically indicates a design issue.
+- **Single Source of Truth**: Define your API schema once using Zod
+- **Type-Safe Client**: Get a fully typed API client for your frontend
+- **Mock Server**: Automatically generate a Hono mock server for development
+- **Frontend Independence**: Work on frontend features while waiting for backend implementation
+- **Zero Configuration**: Works out of the box with sensible defaults
+
+
 ### 3. Create Your API Client
 
 ```ts
