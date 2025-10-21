@@ -5,13 +5,11 @@
   "private": true,
   "scripts": {
     "build": "pnpm -r build",
-    "clean": "pnpm -r clean",
+    "clean": "git clean -Xdf",
     "test": "pnpm -r test",
     "test:coverage": "pnpm -r test:coverage",
     "lint": "biome check --write",
-    "check": "pnpm -r check",
-    "dev:react": "pnpm --filter react-example dev",
-    "dev:vue": "pnpm --filter vue-example dev"
+    "check": "pnpm -r check"
   },
   "dependencies": {
     "hono": "^4.10.1"
