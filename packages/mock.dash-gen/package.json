@@ -1,8 +1,8 @@
 {
-  "name": "mock-dash",
+  "name": "mock-dash-gen",
   "type": "module",
-  "version": "0.0.7",
-  "description": "A TypeScript library for generating type-safe API clients and mock servers from Zod schemas",
+  "version": "0.0.1",
+  "description": "A code generator for mock-dash based on Zod schemas.",
   "author": "Eskil Ganslandt",
   "license": "MIT",
   "homepage": "https://github.com/MrPorky/mock-dash",
@@ -16,8 +16,8 @@
     "server",
     "type-safe",
     "schema",
-    "validation",
-    "hono"
+    "generation",
+    "codegen"
   ],
   "exports": {
     ".": {
@@ -47,10 +47,8 @@
   "peerDependencies": {
     "zod": "^4.0.0"
   },
-  "dependencies": {
-    "@hono/zod-validator": "^0.7.4"
-  },
   "devDependencies": {
+    "openapi3-ts": "^4.5.0",
     "tsdown": "^0.15.7",
     "vitest": "^3.2.4"
   }
