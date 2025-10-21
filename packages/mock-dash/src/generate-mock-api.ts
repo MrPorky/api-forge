@@ -139,19 +139,19 @@ export function generateMockApi<T extends Record<string, unknown>>(
   options.addMiddleware?.(app)
 
   function processEndpoint(
-    key: string,
+    endpointKey: string,
     endpoint: IEndpoint<HttpMethodPath, z.ZodType>,
     mock?: IMock<HttpMethodPath, z.ZodType | ZodArray<z.ZodType>, any>,
   ) {
-    if (key.startsWith('@')) {
-      const parts = key.split('/')
+    if (endpointKey.startsWith('@')) {
+      const parts = endpointKey.split('/')
       const httpMethodPart = parts[0].replace('@', '')
       const methodResult = httpMethodSchema.safeParse(httpMethodPart)
       if (!methodResult.success) {
         throw new Error(`${httpMethodPart} is not a valid HTTP method.`)
       }
       const method = methodResult.data
-      const path = buildEndpointPath(key, endpoint)
+      const path = buildEndpointPath(endpointKey, endpoint.prefix)
 
       const inputValidators = endpoint.input
         ? Object.entries(endpoint.input).map(([target, zodType]) =>

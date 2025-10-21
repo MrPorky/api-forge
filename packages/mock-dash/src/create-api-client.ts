@@ -166,31 +166,29 @@ export function createApiClient<T extends Record<string, unknown>>(
   })
 
   const requestApi = async (
-    key: keyof ApiSchemaEndpoints<T> & string,
+    endpointKey: keyof ApiSchemaEndpoints<T> & string,
     data: Partial<ValidationTargets> | undefined = undefined,
   ): Promise<unknown> => {
-    if (!key.startsWith('@')) {
+    if (!endpointKey.startsWith('@')) {
       throw new ApiError(
-        `Invalid endpoint key: ${key}. It should start with '@' followed by the HTTP method.`,
+        `Invalid endpoint key: ${endpointKey}. It should start with '@' followed by the HTTP method.`,
         400,
       )
     }
 
-    const endpoint = mergedEndpointMap[key]
+    const endpoint = mergedEndpointMap[endpointKey]
     if (!endpoint) {
-      throw new ApiError(`Endpoint not found: ${key}`, 404)
+      throw new ApiError(`Endpoint not found: ${endpointKey}`, 404)
     }
 
-    const parts = key.split('/')
+    const parts = endpointKey.split('/')
     const httpMethodPart = parts[0].replace('@', '')
     const methodResult = httpMethodSchema.safeParse(httpMethodPart)
     if (!methodResult.success) {
       throw new ApiError(`${httpMethodPart} is not a valid HTTP method.`, 404)
     }
     const method = methodResult.data
-    const path = buildEndpointPath(key, endpoint)
-
-    let fullUrl = baseURL + path
+    let fullUrl = buildEndpointPath(endpointKey, endpoint.prefix, baseURL)
 
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -210,7 +208,7 @@ export function createApiClient<T extends Record<string, unknown>>(
           fullUrl = fullUrl.replace(`:${key}`, data.param[key])
         } else {
           throw new ApiError(
-            `Missing URL parameter ${key} for endpoint ${path}`,
+            `Missing URL parameter ${key} for endpoint ${endpointKey}`,
             400,
             {
               url: fullUrl,
@@ -222,7 +220,7 @@ export function createApiClient<T extends Record<string, unknown>>(
     }
 
     // Check for missing URL parameters in the path
-    const missingParams = path.match(/:(\w+)/g)
+    const missingParams = endpointKey.match(/:(\w+)/g)
     if (
       missingParams &&
       (!data ||
@@ -234,7 +232,7 @@ export function createApiClient<T extends Record<string, unknown>>(
       )
       if (missingParam) {
         throw new ApiError(
-          `Missing URL parameter ${missingParam.slice(1)} for endpoint ${path}`,
+          `Missing URL parameter ${missingParam.slice(1)} for endpoint ${endpointKey}`,
           400,
           {
             url: fullUrl,
@@ -295,10 +293,10 @@ export function createApiClient<T extends Record<string, unknown>>(
       ApiSchemaEndpoints<T>,
       keyof ApiSchemaEndpoints<T>
     > = {
-      key,
+      key: endpointKey,
       inputs,
       method,
-      path: path.slice(1), // Remove leading slash (prefix + original path)
+      path: fullUrl,
     }
 
     if (transformRequest) {
