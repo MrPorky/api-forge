@@ -101,7 +101,7 @@ export class Endpoint<
   }
 }
 
-function normalizePrefix(prefix: string): string {
+export function normalizePrefix(prefix: string): string {
   if (!prefix) return ''
 
   let p = prefix.trim()
