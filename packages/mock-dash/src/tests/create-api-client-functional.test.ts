@@ -83,6 +83,66 @@ describe('create-api-client functional tests', () => {
       )
       expect(result).toEqual({ id: '123', name: 'John' })
     })
+
+    it('should apply prefix to path while preserving key', async () => {
+      const apiSchema = {
+        getUser: defineEndpoint(
+          '@get/users/:id',
+          {
+            input: { param: { id: z.string() } },
+            response: z.object({ id: z.string(), name: z.string() }),
+          },
+          { prefix: '/api/v1' },
+        ),
+      }
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: '55', name: 'Prefixed User' }),
+      } as Response)
+
+      const client = createApiClient({
+        apiSchema,
+        baseURL: 'https://api.example.com',
+      })
+
+      const data = await client('@get/users/:id', { param: { id: '55' } })
+
+      expect(data).toEqual({ id: '55', name: 'Prefixed User' })
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.example.com/api/v1/users/55',
+        expect.objectContaining({ method: 'get' }),
+      )
+    })
+
+    it('should normalize messy prefix', async () => {
+      const apiSchema = {
+        getPing: defineEndpoint(
+          '@get/ping',
+          { response: z.string() },
+          { prefix: '///api///v2//' },
+        ),
+      }
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => 'pong',
+      } as Response)
+
+      const client = createApiClient({
+        apiSchema,
+        baseURL: 'https://api.example.com',
+      })
+
+      const result = await client('@get/ping')
+      expect(result).toBe('pong')
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.example.com/api/v2/ping',
+        expect.objectContaining({ method: 'get' }),
+      )
+    })
   })
 
   describe('post requests', () => {
@@ -361,7 +421,7 @@ describe('create-api-client functional tests', () => {
         expect.objectContaining({
           key: '@get/users',
           method: 'get',
-          path: 'users',
+          path: 'https://api.example.com/users',
         }),
         originalResponse,
       )

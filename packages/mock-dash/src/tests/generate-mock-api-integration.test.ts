@@ -387,5 +387,48 @@ describe('generate-mock-api integration tests', () => {
       const getData2 = await getResponse2.json()
       expect(getData2).toEqual({ count: 1 })
     })
+
+    it('should apply prefix to mock server route', async () => {
+      const schema = {
+        getUser: defineEndpoint(
+          '@get/users/:id',
+          {
+            input: { param: { id: z.string() } },
+            response: z.object({ id: z.string(), name: z.string() }),
+          },
+          { prefix: '/api/v3' },
+        ),
+      }
+
+      const mockFaker = vi.fn().mockReturnValue({ id: '77', name: 'Prefixed' })
+      const { app } = generateMockApi(schema, mockFaker)
+
+      const res = await app.request('/api/v3/users/77')
+      expect(res.status).toBe(200)
+      const data = await res.json()
+      expect(data).toEqual({ id: '77', name: 'Prefixed' })
+      expect(mockFaker).toHaveBeenCalledWith(
+        schema.getUser.getEndpoint().response,
+      )
+    })
+
+    it('should combine base option and prefix', async () => {
+      const schema = {
+        getItems: defineEndpoint(
+          '@get/items',
+          { response: z.array(z.object({ id: z.string() })) },
+          { prefix: '/api/v4' },
+        ),
+      }
+
+      const mockFaker = vi.fn().mockReturnValue([{ id: '1' }])
+      const { app } = generateMockApi(schema, mockFaker, { base: '/mock' })
+
+      // base is '/mock', prefix '/api/v4' -> final path '/mock/api/v4/items'
+      const response = await app.request('/mock/api/v4/items')
+      expect(response.status).toBe(200)
+      const data = await response.json()
+      expect(data).toEqual([{ id: '1' }])
+    })
   })
 })

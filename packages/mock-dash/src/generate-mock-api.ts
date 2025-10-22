@@ -7,7 +7,7 @@ import { Collection } from './collections'
 import type { HttpMethodPath } from './common-types'
 import { httpMethodSchema } from './common-types'
 import type { IEndpoint } from './endpoints'
-import { isEndpoint } from './endpoints'
+import { buildEndpointPath, isEndpoint, isEndpoints } from './endpoints'
 import { MockError } from './errors'
 import type { EndpointInputContext, IMock } from './mocks'
 
@@ -139,19 +139,19 @@ export function generateMockApi<T extends Record<string, unknown>>(
   options.addMiddleware?.(app)
 
   function processEndpoint(
-    key: string,
+    endpointKey: string,
     endpoint: IEndpoint<HttpMethodPath, z.ZodType>,
     mock?: IMock<HttpMethodPath, z.ZodType | ZodArray<z.ZodType>, any>,
   ) {
-    if (key.startsWith('@')) {
-      const parts = key.split('/')
+    if (endpointKey.startsWith('@')) {
+      const parts = endpointKey.split('/')
       const httpMethodPart = parts[0].replace('@', '')
       const methodResult = httpMethodSchema.safeParse(httpMethodPart)
       if (!methodResult.success) {
         throw new Error(`${httpMethodPart} is not a valid HTTP method.`)
       }
       const method = methodResult.data
-      const path = `/${parts.slice(1).join('/')}`
+      const path = buildEndpointPath(endpointKey, endpoint.prefix)
 
       const inputValidators = endpoint.input
         ? Object.entries(endpoint.input).map(([target, zodType]) =>
@@ -240,6 +240,14 @@ export function generateMockApi<T extends Record<string, unknown>>(
     if (isEndpoint(apiDefinition)) {
       const [key, endpoint, mock] = apiDefinition.getEntry()
       processEndpoint(key, endpoint, mock)
+    }
+
+    // Handle Endpoints class instances (plural API)
+    if (isEndpoints(apiDefinition)) {
+      const entries = apiDefinition.getEntries()
+      for (const [key, endpoint, mock] of entries) {
+        processEndpoint(key, endpoint, mock)
+      }
     }
   }
 

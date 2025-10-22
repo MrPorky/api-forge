@@ -13,7 +13,7 @@ import type {
 import { InterceptorManager } from './client-types'
 import { httpMethodSchema } from './common-types'
 import type { IEndpoint } from './endpoints'
-import { isEndpoint } from './endpoints'
+import { buildEndpointPath, isEndpoint, isEndpoints } from './endpoints'
 import { ApiError, NetworkError, ValidationError } from './errors'
 import { buildFormData, serializeQueryParams } from './request-utils'
 
@@ -155,34 +155,40 @@ export function createApiClient<T extends Record<string, unknown>>(
       const [key, e] = apiDefinition.getEntry()
       mergedEndpointMap[key] = e
     }
+
+    // Handle Endpoints class instances (plural API)
+    if (isEndpoints(apiDefinition)) {
+      const entries = apiDefinition.getEntries()
+      for (const [key, endpoint] of entries) {
+        mergedEndpointMap[key] = endpoint
+      }
+    }
   })
 
   const requestApi = async (
-    key: keyof ApiSchemaEndpoints<T> & string,
+    endpointKey: keyof ApiSchemaEndpoints<T> & string,
     data: Partial<ValidationTargets> | undefined = undefined,
   ): Promise<unknown> => {
-    if (!key.startsWith('@')) {
+    if (!endpointKey.startsWith('@')) {
       throw new ApiError(
-        `Invalid endpoint key: ${key}. It should start with '@' followed by the HTTP method.`,
+        `Invalid endpoint key: ${endpointKey}. It should start with '@' followed by the HTTP method.`,
         400,
       )
     }
 
-    const endpoint = mergedEndpointMap[key]
+    const endpoint = mergedEndpointMap[endpointKey]
     if (!endpoint) {
-      throw new ApiError(`Endpoint not found: ${key}`, 404)
+      throw new ApiError(`Endpoint not found: ${endpointKey}`, 404)
     }
 
-    const parts = key.split('/')
+    const parts = endpointKey.split('/')
     const httpMethodPart = parts[0].replace('@', '')
     const methodResult = httpMethodSchema.safeParse(httpMethodPart)
     if (!methodResult.success) {
       throw new ApiError(`${httpMethodPart} is not a valid HTTP method.`, 404)
     }
     const method = methodResult.data
-    const path = `/${parts.slice(1).join('/')}`
-
-    let fullUrl = baseURL + path
+    let fullUrl = buildEndpointPath(endpointKey, endpoint.prefix, baseURL)
 
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -202,7 +208,7 @@ export function createApiClient<T extends Record<string, unknown>>(
           fullUrl = fullUrl.replace(`:${key}`, data.param[key])
         } else {
           throw new ApiError(
-            `Missing URL parameter ${key} for endpoint ${path}`,
+            `Missing URL parameter ${key} for endpoint ${endpointKey}`,
             400,
             {
               url: fullUrl,
@@ -214,7 +220,7 @@ export function createApiClient<T extends Record<string, unknown>>(
     }
 
     // Check for missing URL parameters in the path
-    const missingParams = path.match(/:(\w+)/g)
+    const missingParams = endpointKey.match(/:(\w+)/g)
     if (
       missingParams &&
       (!data ||
@@ -226,7 +232,7 @@ export function createApiClient<T extends Record<string, unknown>>(
       )
       if (missingParam) {
         throw new ApiError(
-          `Missing URL parameter ${missingParam.slice(1)} for endpoint ${path}`,
+          `Missing URL parameter ${missingParam.slice(1)} for endpoint ${endpointKey}`,
           400,
           {
             url: fullUrl,
@@ -287,10 +293,10 @@ export function createApiClient<T extends Record<string, unknown>>(
       ApiSchemaEndpoints<T>,
       keyof ApiSchemaEndpoints<T>
     > = {
-      key,
+      key: endpointKey,
       inputs,
       method,
-      path: path.slice(1), // Remove leading slash
+      path: fullUrl,
     }
 
     if (transformRequest) {
@@ -378,7 +384,16 @@ export function createApiClient<T extends Record<string, unknown>>(
 
     let jsonResponse: unknown
     try {
-      jsonResponse = await response.json()
+      if (
+        endpoint.response instanceof z.ZodString ||
+        endpoint.response instanceof z.ZodStringFormat
+      ) {
+        jsonResponse = await response.text()
+      } else if (endpoint.response instanceof z.ZodVoid) {
+        jsonResponse = undefined
+      } else {
+        jsonResponse = await response.json()
+      }
     } catch (error) {
       throw new ApiError('Failed to parse response as JSON', response.status, {
         url: fullUrl,
