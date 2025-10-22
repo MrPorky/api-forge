@@ -224,6 +224,19 @@ export function generateMockApi<T extends Record<string, unknown>>(
         if (mockData instanceof Response) {
           return mockData
         } else {
+          if (
+            endpoint.response instanceof z.ZodString ||
+            endpoint.response instanceof z.ZodStringFormat
+          ) {
+            if (typeof mockData !== 'string') {
+              return c.json({ message: 'a string is expected' }, 400)
+            }
+
+            c.text(mockData)
+          } else if (endpoint.response instanceof z.ZodVoid) {
+            return
+          }
+
           return c.json(mockData)
         }
       })
