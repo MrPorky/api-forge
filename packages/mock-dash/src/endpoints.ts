@@ -155,7 +155,7 @@ export function buildEndpointPath(
   }
   baseRemainder = baseRemainder.replace(/\/+/g, '/').replace(/\/$/, '')
   if (baseRemainder && !baseRemainder.startsWith('/')) {
-    baseRemainder = '/' + baseRemainder
+    baseRemainder = `/${baseRemainder}`
   }
   const pathPart = combined.replace(/^\/+/, '')
   const finalPath = `${baseRemainder || ''}/${pathPart}`.replace(/\/+/g, '/')
