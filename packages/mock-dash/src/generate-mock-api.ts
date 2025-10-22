@@ -232,9 +232,9 @@ export function generateMockApi<T extends Record<string, unknown>>(
               return c.json({ message: 'a string is expected' }, 400)
             }
 
-            c.text(mockData)
+            return c.text(mockData)
           } else if (endpoint.response instanceof z.ZodVoid) {
-            return
+            return c.body(null)
           }
 
           return c.json(mockData)
