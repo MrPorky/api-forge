@@ -40,10 +40,10 @@ type Inputs<
   K extends HttpMethodPath,
   I extends EndpointInput<K> | undefined,
 > = {
-  [K in keyof I]: I[K] extends z.ZodType
-    ? z.infer<I[K]>
-    : I[K] extends object
-      ? InferZodType<I[K]>
+  [Key in keyof I]: I[Key] extends z.ZodType
+    ? z.infer<I[Key]>
+    : I[Key] extends object
+      ? InferZodType<I[Key]>
       : never
 }
 

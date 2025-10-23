@@ -10,7 +10,6 @@ import { parseArgs, runSchemaGenerator } from './cli-methods'
 
 async function main() {
   const cliArguments = parseArgs(process.argv)
-  console.info('Running mock-dash schema generator...')
   await runSchemaGenerator(cliArguments)
 }
 
