@@ -31,6 +31,7 @@ interface GenContext {
   components: Map<string, string> // component name -> schema expression
   resolving: Set<string>
   spec: any
+  propertiesRequiredByDefault: boolean
 }
 
 function ensureComponent(name: string, schema: any, ctx: GenContext) {
@@ -53,7 +54,8 @@ function getSchemaFromRef(ref: string, ctx: GenContext) {
   const target = ctx.spec?.components?.schemas?.[name]
   if (!target) return 'z.unknown()'
   ensureComponent(name, target, ctx)
-  return `${name}Schema`
+  const camelCaseName = apiPathToCamelCase(name)
+  return `${camelCaseName}Model`
 }
 
 function primitiveStringExpr(schema: any): string {
@@ -106,14 +108,18 @@ function toZodExpr(schema: any, ctx: GenContext): string {
         : 'z.unknown()'
       return nullableWrap(`z.array(${itemExpr})`)
     }
-    case 'object':
+    // case 'object':
     default: {
       const props = schema.properties || {}
       const required: string[] = schema.required || []
       const entries: string[] = []
       for (const [key, propSchema] of Object.entries<any>(props)) {
         let propExpr = toZodExpr(propSchema, ctx)
-        if (!required.includes(key)) propExpr += '.optional()'
+        // If propertiesRequiredByDefault is true, treat all properties as required unless explicitly marked optional
+        // If propertiesRequiredByDefault is false, use the standard OpenAPI required array
+        const isRequired =
+          ctx.propertiesRequiredByDefault || required.includes(key)
+        if (!isRequired) propExpr += '.optional()'
         entries.push(`${JSON.stringify(key)}: ${propExpr}`)
       }
       return nullableWrap(`z.object({ ${entries.join(', ')} })`)
@@ -131,6 +137,7 @@ export interface EndpointDef {
 export function buildMockDashSchema(
   spec: any,
   prefixes: string[] = [],
+  propertiesRequiredByDefault: boolean = false,
 ): {
   endpoints: EndpointDef[]
   components: Map<string, string>
@@ -142,6 +149,7 @@ export function buildMockDashSchema(
     components: new Map<string, string>(),
     resolving: new Set<string>(),
     spec,
+    propertiesRequiredByDefault,
   }
 
   // Pre-register component schemas so that references can resolve consistently
@@ -168,14 +176,14 @@ export function buildMockDashSchema(
           strippedPath = rawPath.slice(normalizedPrefix.length)
           // Ensure stripped path starts with /
           if (!strippedPath.startsWith('/')) {
-            strippedPath = '/' + strippedPath
+            strippedPath = `/${strippedPath}`
           }
           break
         }
       }
 
       const colonPath = strippedPath.replace(/\{([^}]+)\}/g, ':$1')
-      const endpointKey = `@${method.toLowerCase()}${colonPath.startsWith('/') ? colonPath : '/' + colonPath}`
+      const endpointKey = `@${method.toLowerCase()}${colonPath.startsWith('/') ? colonPath : `/${colonPath}`}`
       const inputParts: EndpointDef['inputParts'] = {}
 
       if (Array.isArray(endpoint.parameters)) {
@@ -187,7 +195,7 @@ export function buildMockDashSchema(
           const expr = toZodExpr(param.schema, ctx)
           if (param.in === 'query') {
             queryEntries.push(
-              `${JSON.stringify(param.name)}: ${param.required ? expr : expr + '.optional()'}`,
+              `${JSON.stringify(param.name)}: ${param.required ? expr : `${expr}.optional()`}`,
             )
           } else if (param.in === 'path') {
             paramEntries.push(`${JSON.stringify(param.name)}: ${expr}`)
@@ -303,7 +311,10 @@ export function emitTs(data: {
 }): string {
   const { endpoints, components } = data
   const compDecls = Array.from(components.entries())
-    .map(([name, expr]) => `export const ${name}Schema = ${expr}`)
+    .map(([name, expr]) => {
+      const camelCaseName = apiPathToCamelCase(name)
+      return `export const ${camelCaseName}Model = ${expr}`
+    })
     .join('\n')
 
   const endpointLines = endpoints
@@ -344,7 +355,8 @@ interface CliOptions {
   command: string | undefined
   input: string | undefined
   outFile: string
-  prefixes: string[]
+  prefixes: string[] // Prefixes to strip from paths
+  propertiesRequiredByDefault: boolean // Treat schema objects without required as having all properties required.
 }
 
 export function parseArgs(argv: string[]): CliOptions {
@@ -355,6 +367,7 @@ export function parseArgs(argv: string[]): CliOptions {
     input: args[1],
     outFile: 'mock-dash-schema.ts',
     prefixes: [],
+    propertiesRequiredByDefault: false,
   }
 
   for (let i = 2; i < args.length; i++) {
@@ -368,6 +381,10 @@ export function parseArgs(argv: string[]): CliOptions {
       const prefix = args[i + 1]
       ctx.prefixes.push(...prefix.split(','))
       i++
+    }
+
+    if (arg === '--properties-required-by-default' || arg === '-prbd') {
+      ctx.propertiesRequiredByDefault = true
     }
 
     if (arg === '--help' || arg === '-h') {
@@ -384,6 +401,7 @@ export async function runSchemaGenerator({
   input,
   outFile,
   prefixes,
+  propertiesRequiredByDefault,
 }: CliOptions) {
   if (!command) {
     printHelp()
@@ -401,7 +419,11 @@ export async function runSchemaGenerator({
   }
   try {
     const spec = await readSpec(input)
-    const schema = buildMockDashSchema(spec, prefixes)
+    const schema = buildMockDashSchema(
+      spec,
+      prefixes,
+      propertiesRequiredByDefault,
+    )
     const destPath = path.resolve(process.cwd(), outFile)
     fs.writeFileSync(destPath, emitTs(schema))
     console.log(`✔ mock-dash schema generated: ${destPath}`)
@@ -416,19 +438,22 @@ function printHelp() {
     `mock-dash CLI
 
 Usage:
-  mock-dash generate <openapi-file-or-url> [--out <file>] [--prefix <prefix>]
+  mock-dash generate <openapi-file-or-url> [--out <file>] [--prefix <prefix>] [--properties-required-by-default]
 
 Options:
-  --out, -o <file>      Output file path (default: mock-dash-schema.ts)
-  --prefix, -p <prefix> Strip prefix from OpenAPI paths and add as prefix option to defineEndpoint.
-                        Can be used multiple times or comma-separated for multiple prefixes.
-  --help, -h            Show this help message
+  --out, -o <file>                          Output file path (default: mock-dash-schema.ts)
+  --prefix, -p <prefix>                     Strip prefix from OpenAPI paths and add as prefix option to defineEndpoint.
+                                            Can be used multiple times or comma-separated for multiple prefixes.
+  --properties-required-by-default, -prbd   Treat all object properties as required by default, regardless of the
+                                            OpenAPI schema's required array.
+  --help, -h                                Show this help message
 
 Examples:
   mock-dash generate ./openapi.json
   mock-dash generate ./openapi.yaml --out api-schema.ts
   mock-dash generate https://example.com/openapi.json --prefix /api/v1
   mock-dash generate ./openapi.json --prefix /api/v1,/api/v2
+  mock-dash generate ./openapi.json --properties-required-by-default
 `,
   )
 }

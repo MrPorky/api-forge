@@ -1,55 +1,22 @@
 import type { Context } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import { sign } from 'hono/jwt'
-import { defineEndpoint, MockError } from 'mock-dash'
+import { MockError } from 'mock-dash'
 import z from 'zod'
-import type { Session } from '../models/session'
-import { sessionModel } from '../models/session'
-import type { User } from '../models/user'
-import { userModel } from '../models/user'
+import {
+  getGetSession,
+  postSignInEmail,
+  postSignOut,
+  postSignUpEmail,
+  sessionModel,
+  userModel,
+} from './auth.gen'
 
-export const signUp = defineEndpoint('@post/auth/sign-up/email', {
-  input: {
-    json: z.object({
-      name: z.string(), // required
-      email: z.email(), // required
-      password: z.string(), // required
-      image: z.url().optional(), // optional
-      callbackURL: z.string().optional(), // optional
-    }),
-  },
-  response: z.object({
-    token: z.string(),
-    user: userModel,
-  }),
-})
-
-export const signIn = defineEndpoint('@post/auth/sign-in/email', {
-  input: {
-    json: z.object({
-      email: z.email(), // required
-      password: z.string(), // required
-      rememberMe: z.boolean().optional(), // optional
-      callbackURL: z.string().optional(), // optional
-    }),
-  },
-  response: z.object({
-    redirect: z.boolean(),
-    token: z.string(),
-    user: userModel,
-  }),
-})
-
-export const signOut = defineEndpoint('@post/auth/sign-out', {
-  response: z.object({ success: z.boolean() }),
-})
-
-export const getSession = defineEndpoint('@get/get-session', {
-  response: sessionModel,
-})
+export type User = z.infer<typeof userModel>
+export type Session = z.infer<typeof sessionModel>
 
 if (process.env.NODE_ENV !== 'production') {
-  signUp.defineMock({
+  postSignUpEmail.defineMock({
     mockFn: async ({ honoContext, inputs, mockContext }) => {
       const user = mockContext.get(`user.${inputs.json.email}`)
 
@@ -80,7 +47,7 @@ if (process.env.NODE_ENV !== 'production') {
     },
   })
 
-  signIn.defineMock({
+  postSignInEmail.defineMock({
     mockFn: async ({ honoContext, inputs, mockContext }) => {
       const password = mockContext.get(`user.${inputs.json.email}.pass`)
 
@@ -95,12 +62,13 @@ if (process.env.NODE_ENV !== 'production') {
       return {
         redirect: false,
         token: jwt,
+        url: null,
         user,
       }
     },
   })
 
-  signOut.defineMock({
+  postSignOut.defineMock({
     mockFn: ({ honoContext, mockContext }) => {
       const userParseResult = userModel.safeParse(honoContext.get('jwtPayload'))
       const jwt = getCookie(honoContext, 'jwt')
@@ -112,7 +80,7 @@ if (process.env.NODE_ENV !== 'production') {
       }
 
       const sessionParseResult = z
-        .array(sessionModel.shape.session)
+        .array(sessionModel)
         .safeParse(mockContext.get(`session.${user.id}`))
       const sessions = sessionParseResult.data
       if (!sessions) {
@@ -130,7 +98,7 @@ if (process.env.NODE_ENV !== 'production') {
     },
   })
 
-  getSession.defineMock({
+  getGetSession.defineMock({
     mockFn: ({ honoContext, mockContext }) => {
       const userParseResult = userModel.safeParse(honoContext.get('jwtPayload'))
 
@@ -140,7 +108,7 @@ if (process.env.NODE_ENV !== 'production') {
 
       const user = userParseResult.data
       const sessionParseResult = z
-        .array(sessionModel.shape.session)
+        .array(sessionModel)
         .safeParse(mockContext.get(`session.${user.id}`))
 
       if (!sessionParseResult.success) {
@@ -171,12 +139,12 @@ if (process.env.NODE_ENV !== 'production') {
     const now = new Date()
 
     const parseResult = z
-      .array(sessionModel.shape.session)
+      .array(sessionModel)
       .safeParse(mockContext.get(`session.${user.id}`))
 
-    const newSession: Session['session'] = {
+    const newSession: Session = {
       createdAt: now.toISOString(),
-      expiersAt: new Date(now.getDate() + 1).toISOString(),
+      expiresAt: new Date(now.getDate() + 1).toISOString(),
       id: crypto.randomUUID(),
       ipAddress: '127.0.0.1',
       token: jwt,

@@ -1,4 +1,4 @@
-import type { signUp } from '@examples/shared'
+import type { postSignUpEmail } from '@examples/shared'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { isValidationError } from 'mock-dash'
 import type { AriaAttributes, FormEventHandler } from 'react'
@@ -16,7 +16,7 @@ export const Route = createFileRoute('/signup')({
   }),
 })
 
-type JSON = typeof signUp.$inferInputJson
+type JSON = typeof postSignUpEmail.$inferInputJson
 
 function RouteComponent() {
   const navigate = useNavigate()
@@ -42,10 +42,13 @@ function RouteComponent() {
       name: formData.get('name') as string,
       email: formData.get('email') as string,
       password: formData.get('password') as string,
+      callbackURL: '',
+      image: '',
+      rememberMe: false,
     }
 
     try {
-      await apiClient('@post/auth/sign-up/email', { json: data })
+      await apiClient('@post/sign-up/email', { json: data })
 
       getSession()
       navigate({

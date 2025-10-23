@@ -1,4 +1,4 @@
-import type { signIn } from '@examples/shared'
+import type { postSignInEmail } from '@examples/shared'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { isValidationError } from 'mock-dash'
 import type { AriaAttributes } from 'react'
@@ -16,7 +16,7 @@ export const Route = createFileRoute('/signin')({
   }),
 })
 
-type JSON = typeof signIn.$inferInputJson
+type JSON = typeof postSignInEmail.$inferInputJson
 type Errors = ReturnType<typeof z.treeifyError<JSON>>
 
 function RouteComponent() {
@@ -32,11 +32,12 @@ function RouteComponent() {
       const data: JSON = {
         email: formData.get('email') as string,
         password: formData.get('password') as string,
-        rememberMe: formData.get('remember') !== undefined,
+        rememberMe: formData.get('remember') as string,
+        callbackURL: null,
       }
 
       try {
-        await apiClient('@post/auth/sign-in/email', { json: data })
+        await apiClient('@post/sign-in/email', { json: data })
         getSession()
 
         navigate({

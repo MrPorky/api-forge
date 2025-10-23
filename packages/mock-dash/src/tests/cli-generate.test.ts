@@ -19,6 +19,33 @@ describe('runSchemaGenerator CLI integration', () => {
     removeOutput()
   })
 
+  it('generates schema from relative swagger.json', async () => {
+    const jsonSpecPath = './src/tests/swagger.json'
+    const args = parseArgs([
+      'node',
+      'mock-dash',
+      'generate',
+      jsonSpecPath,
+      '--out',
+      OUTPUT_TS,
+    ])
+    await runSchemaGenerator(args)
+
+    const dest = path.resolve(process.cwd(), OUTPUT_TS)
+    expect(fs.existsSync(dest)).toBe(true)
+    const contents = fs.readFileSync(dest, 'utf8')
+    // Assert component schemas are exported
+    expect(contents).toMatch(/export const userModel = /)
+    expect(contents).toMatch(/export const sessionModel = /)
+    // Assert some endpoint definitions (camelCased)
+    expect(contents).toMatch(
+      /export const postSignInSocial = defineEndpoint\("@post\/sign-in\/social"/,
+    )
+    expect(contents).toMatch(
+      /export const getGetSession = defineEndpoint\("@get\/get-session"/,
+    )
+  })
+
   it('generates schema from swagger.json', async () => {
     const jsonSpecPath = path.resolve(__dirname, 'swagger.json')
     const args = parseArgs([
@@ -35,8 +62,8 @@ describe('runSchemaGenerator CLI integration', () => {
     expect(fs.existsSync(dest)).toBe(true)
     const contents = fs.readFileSync(dest, 'utf8')
     // Assert component schemas are exported
-    expect(contents).toMatch(/export const UserSchema = /)
-    expect(contents).toMatch(/export const SessionSchema = /)
+    expect(contents).toMatch(/export const userModel = /)
+    expect(contents).toMatch(/export const sessionModel = /)
     // Assert some endpoint definitions (camelCased)
     expect(contents).toMatch(
       /export const postSignInSocial = defineEndpoint\("@post\/sign-in\/social"/,
@@ -62,8 +89,8 @@ describe('runSchemaGenerator CLI integration', () => {
     expect(fs.existsSync(dest)).toBe(true)
     const contents = fs.readFileSync(dest, 'utf8')
     // Assert component schemas are exported
-    expect(contents).toMatch(/export const UserSchema = /)
-    expect(contents).toMatch(/export const AccountSchema = /)
+    expect(contents).toMatch(/export const userModel = /)
+    expect(contents).toMatch(/export const accountModel = /)
     // Assert an endpoint definition from yaml
     expect(contents).toMatch(
       /export const postSignUpEmail = defineEndpoint\("@post\/sign-up\/email"/,
@@ -89,8 +116,8 @@ describe('runSchemaGenerator CLI integration', () => {
     const contents = fs.readFileSync(dest, 'utf8')
 
     // Assert component schemas are exported
-    expect(contents).toMatch(/export const UserSchema = /)
-    expect(contents).toMatch(/export const ProductSchema = /)
+    expect(contents).toMatch(/export const userModel = /)
+    expect(contents).toMatch(/export const productModel = /)
 
     // Assert endpoints with stripped prefixes and prefix options
     expect(contents).toMatch(
@@ -134,8 +161,8 @@ describe('runSchemaGenerator CLI integration', () => {
     const contents = fs.readFileSync(dest, 'utf8')
 
     // Assert component schemas are exported
-    expect(contents).toMatch(/export const UserSchema = /)
-    expect(contents).toMatch(/export const ProductSchema = /)
+    expect(contents).toMatch(/export const userModel = /)
+    expect(contents).toMatch(/export const productModel = /)
 
     // Assert endpoints with stripped prefixes and prefix options
     expect(contents).toMatch(
@@ -179,8 +206,8 @@ describe('runSchemaGenerator CLI integration', () => {
     const contents = fs.readFileSync(dest, 'utf8')
 
     // Assert component schemas are exported
-    expect(contents).toMatch(/export const UserSchema = /)
-    expect(contents).toMatch(/export const ProductSchema = /)
+    expect(contents).toMatch(/export const userModel = /)
+    expect(contents).toMatch(/export const productModel = /)
 
     // Assert endpoints with stripped prefixes and prefix options
     expect(contents).toMatch(
@@ -226,5 +253,97 @@ describe('runSchemaGenerator CLI integration', () => {
     expect(contents).toMatch(
       /export const get = defineEndpoint\("@get\/", .+, \{ prefix: "\/health" \}\)/,
     )
+  })
+
+  it('generates schema with propertiesRequiredByDefault option', async () => {
+    const jsonSpecPath = path.resolve(__dirname, 'swagger.json')
+
+    // First, generate without the option (default behavior)
+    const argsDefault = parseArgs([
+      'node',
+      'mock-dash',
+      'generate',
+      jsonSpecPath,
+      '--out',
+      OUTPUT_TS,
+    ])
+    await runSchemaGenerator(argsDefault)
+
+    const dest = path.resolve(process.cwd(), OUTPUT_TS)
+    expect(fs.existsSync(dest)).toBe(true)
+    const contentsDefault = fs.readFileSync(dest, 'utf8')
+
+    // Should have optional properties based on OpenAPI required array
+    // User schema has id and image as optional (not in required array)
+    expect(contentsDefault).toMatch(
+      /userModel.*"id": z\.string\(\)\.optional\(\)/,
+    )
+    expect(contentsDefault).toMatch(
+      /userModel.*"image": z\.string\(\)\.optional\(\)/,
+    )
+    // name, email, emailVerified should be required (in required array)
+    expect(contentsDefault).toMatch(/userModel.*"name": z\.string\(\),/) // name should not have .optional()
+    expect(contentsDefault).toMatch(/userModel.*"email": z\.string\(\),/) // email should not have .optional()
+    expect(contentsDefault).toMatch(
+      /userModel.*"emailVerified": z\.boolean\(\),/,
+    ) // emailVerified should not have .optional()
+    expect(contentsDefault).not.toMatch(
+      /userModel.*"name": z\.string\(\)\.optional\(\)/,
+    )
+    expect(contentsDefault).not.toMatch(
+      /userModel.*"email": z\.string\(\)\.optional\(\)/,
+    )
+
+    // Clean up for next generation
+    removeOutput()
+
+    // Now generate with propertiesRequiredByDefault option
+    const argsRequired = parseArgs([
+      'node',
+      'mock-dash',
+      'generate',
+      jsonSpecPath,
+      '--out',
+      OUTPUT_TS,
+      '--properties-required-by-default',
+    ])
+
+    await runSchemaGenerator(argsRequired)
+
+    expect(fs.existsSync(dest)).toBe(true)
+    const contentsRequired = fs.readFileSync(dest, 'utf8')
+
+    // All properties should be required (no .optional())
+    expect(contentsRequired).toMatch(/"id": z\.string\(\),/) // Should not have .optional()
+    expect(contentsRequired).toMatch(/"image": z\.string\(\),/) // Should not have .optional()
+    expect(contentsRequired).toMatch(/"name": z\.string\(\),/)
+    expect(contentsRequired).toMatch(/"email": z\.string\(\),/)
+    // Should not have .optional() anywhere in User schema for id and image
+    expect(contentsRequired).not.toMatch(/"id": z\.string\(\)\.optional\(\)/)
+    expect(contentsRequired).not.toMatch(/"image": z\.string\(\)\.optional\(\)/)
+  })
+
+  it('generates schema with short propertiesRequiredByDefault option (-prbd)', async () => {
+    const jsonSpecPath = path.resolve(__dirname, 'swagger.json')
+    const args = parseArgs([
+      'node',
+      'mock-dash',
+      'generate',
+      jsonSpecPath,
+      '--out',
+      OUTPUT_TS,
+      '-prbd',
+    ])
+    await runSchemaGenerator(args)
+
+    const dest = path.resolve(process.cwd(), OUTPUT_TS)
+    expect(fs.existsSync(dest)).toBe(true)
+    const contents = fs.readFileSync(dest, 'utf8')
+
+    // All properties should be required (no .optional())
+    expect(contents).toMatch(/"id": z\.string\(\)/)
+    expect(contents).toMatch(/"image": z\.string\(\)/)
+    expect(contents).not.toMatch(/"id": z\.string\(\)\.optional\(\)/)
+    expect(contents).not.toMatch(/"image": z\.string\(\)\.optional\(\)/)
   })
 })
