@@ -1,6 +1,6 @@
 import type { Context } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
-import { sign } from 'hono/jwt'
+import { decode, sign } from 'hono/jwt'
 import { MockError } from 'mock-dash'
 import z from 'zod'
 import {
@@ -100,7 +100,14 @@ if (process.env.NODE_ENV !== 'production') {
 
   getGetSession.defineMock({
     mockFn: ({ honoContext, mockContext }) => {
-      const userParseResult = userModel.safeParse(honoContext.get('jwtPayload'))
+      const jwt = getCookie(honoContext, 'jwt')
+
+      if (!jwt) {
+        throw new MockError('Could not get session', 401)
+      }
+
+      const decodedJwt = decode(jwt)
+      const userParseResult = userModel.safeParse(decodedJwt.payload)
 
       if (!userParseResult.success) {
         throw new MockError('Could not get session', 401)
