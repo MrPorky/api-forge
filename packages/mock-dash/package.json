@@ -1,9 +1,9 @@
 {
   "name": "mock-dash",
   "type": "module",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "A TypeScript library for generating type-safe API clients and mock servers from Zod schemas",
-  "author": "",
+  "author": "Eskil Ganslandt",
   "license": "MIT",
   "homepage": "https://github.com/MrPorky/mock-dash",
   "bugs": "https://github.com/MrPorky/mock-dash/issues",
@@ -36,11 +36,13 @@
   "files": [
     "dist"
   ],
+  "bin": {
+    "mock-dash": "dist/cli.js"
+  },
   "scripts": {
     "build": "tsdown",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "lint": "biome check --write",
     "check": "tsc --noEmit",
     "prepublishOnly": "pnpm run build"
   },
@@ -48,10 +50,10 @@
     "zod": "^4.0.0"
   },
   "dependencies": {
-    "@hono/zod-validator": "^0.7.4"
+    "@hono/zod-validator": "^0.7.4",
+    "yaml": "^2.8.1"
   },
   "devDependencies": {
-    "tsdown": "^0.15.7",
-    "vitest": "^3.2.4"
+    "tsdown": "^0.15.9"
   }
 }

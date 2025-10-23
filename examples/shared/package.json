@@ -16,6 +16,7 @@
     }
   },
   "scripts": {
+    "gen:schemas": "pnpm exec mock-dash generate ./src/swagger.json -o ./src/schemas/auth.gen.ts -prbd",
     "build": "tsc",
     "check": "tsc --noEmit"
   },

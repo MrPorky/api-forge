@@ -1,5 +1,5 @@
 <script lang='ts'>
-import type { signIn } from '@examples/shared'
+import type { postSignInEmail } from '@examples/shared'
 import { isValidationError } from 'mock-dash'
 import type { AriaAttributes } from 'svelte/elements'
 import z from 'zod'
@@ -12,7 +12,7 @@ import type { PageProps } from './$types'
 const { data }: PageProps = $props()
 const { redirect } = data
 
-type JSON = typeof signIn.$inferInputJson
+type JSON = typeof postSignInEmail.$inferInputJson
 
 let errors = $state<ReturnType<typeof z.treeifyError<JSON>>>({
   errors: [],
@@ -28,11 +28,12 @@ async function handleSubmit(
   const data: JSON = {
     email: formData.get('email') as string,
     password: formData.get('password') as string,
-    rememberMe: formData.get('remember') !== undefined,
+    rememberMe: formData.get('remember') as string,
+    callbackURL: null,
   }
 
   try {
-    await apiClient('@post/auth/sign-in/email', { json: data })
+    await apiClient('@post/sign-in/email', { json: data })
 
     goto(redirect)
   } catch (error) {

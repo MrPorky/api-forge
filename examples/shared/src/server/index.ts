@@ -17,19 +17,13 @@ const { app } = generateMockApi(apiSchema, (s) => zocker(s).generate(), {
       return c.text('Internal Server Error', 500)
     })
 
-    app.use('*', async (c, next) => {
-      if (c.req.path.startsWith('/api/auth/') && !c.req.path.endsWith('me')) {
-        await next()
-        return
-      }
-
-      const jwtMiddelware = jwt({
+    app.use(
+      '/products/*',
+      jwt({
         secret: 'mockJwtSecret',
         cookie: 'jwt',
-      })
-
-      return jwtMiddelware(c, next)
-    })
+      }),
+    )
   },
   base: '/api',
 })
