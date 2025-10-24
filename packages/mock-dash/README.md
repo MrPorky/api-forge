@@ -468,30 +468,30 @@ export const createUser = defineEndpoint('@post/users', {
 
 ## Features
 
-### Current Features ✅
+### Current Features
 
-- [x] **Type Safety**: Full TypeScript support with inferred types from Zod schemas
-- [x] **Single Source of Truth**: Define your API once, use everywhere
-- [x] **Request/Response Validation**: Automatic validation using Zod schemas
-- [x] **Mock Server Generation**: Instantly generate Hono-based mock servers
-- [x] **Fake Data Generation**: Automatic realistic test data using any Zod faker
-- [x] **Middleware Support**: Add authentication, CORS, logging, and custom middleware
-- [x] **Path Parameters**: Full support for dynamic routes with type safety
-- [x] **Query Parameters**: Type-safe query string handling and validation
-- [x] **Multiple Input Types**: Support for JSON, form data, query params, and headers
-- [x] **Framework Agnostic**: Works with any frontend framework (React, Vue, Svelte, etc.)
-- [x] **Development Ready**: Perfect for frontend-first development workflows
-- [x] **OpenAPI Integration** - Generate Zod schemas and TypeScript models directly from OpenAPI/Swagger specifications, bridging existing API documentation with MockDash
+- ✅ **Type Safety**: Full TypeScript support with inferred types from Zod schemas
+- ✅ **Single Source of Truth**: Define your API once, use everywhere
+- ✅ **Request/Response Validation**: Automatic validation using Zod schemas
+- ✅ **Mock Server Generation**: Instantly generate Hono-based mock servers
+- ✅ **Fake Data Generation**: Automatic realistic test data using any Zod faker
+- ✅ **Middleware Support**: Add authentication, CORS, logging, and custom middleware
+- ✅ **Path Parameters**: Full support for dynamic routes with type safety
+- ✅ **Query Parameters**: Type-safe query string handling and validation
+- ✅ **Multiple Input Types**: Support for JSON, form data, query params, and headers
+- ✅ **Framework Agnostic**: Works with any frontend framework (React, Vue, Svelte, etc.)
+- ✅ **Development Ready**: Perfect for frontend-first development workflows
+- ✅ **OpenAPI Integration** - Generate Zod schemas and TypeScript models directly from OpenAPI/Swagger specifications, bridging existing API documentation with MockDash
 
-### Roadmap to Stable Version 🚧
+### Roadmap to Stable Version
 
 The following key features are planned before the stable 1.0 release:
 
-- [ ] **Server-Sent Events (SSE) Support** - Enable real-time data streaming in the generated API client with full TypeScript support for SSE endpoints
-- [ ] **Enhanced Mock Data Generation** - Provide intuitive APIs to register custom faker functions for specific properties, enabling domain-specific realistic test data
-- [ ] **Integrated Form Handling** - Built-in form utilities with validation, error handling, and seamless API client integration for rapid frontend development
-- [ ] **Stateful Mock Collections** - Persistent in-memory collections with CRUD operations, allowing shared state across mock endpoints for more realistic development scenarios
-- [ ] **Comprehensive Framework Examples** - Fully working example projects for React, Next.js, Nuxt, SvelteKit, Astro, and SolidJS demonstrating best practices and framework-specific integration patterns
+- ⌛ **Server-Sent Events (SSE) Support** - Enable real-time data streaming in the generated API client with full TypeScript support for SSE endpoints
+- ⌛ **Enhanced Mock Data Generation** - Provide intuitive APIs to register custom faker functions for specific properties, enabling domain-specific realistic test data
+- ⌛ **Integrated Form Handling** - Built-in form utilities with validation, error handling, and seamless API client integration for rapid frontend development
+- ⌛ **Stateful Mock Collections** - Persistent in-memory collections with CRUD operations, allowing shared state across mock endpoints for more realistic development scenarios
+- ⌛ **Comprehensive Framework Examples** - Fully working example projects for React, Next.js, Nuxt, SvelteKit, Astro, and SolidJS demonstrating best practices and framework-specific integration patterns
 
 ## Development Workflow
 

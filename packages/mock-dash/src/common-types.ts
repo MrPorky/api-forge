@@ -21,10 +21,8 @@ type PathParamToObject<
 > = R extends `${string}:${infer P}`
   ? P extends `${infer PARAM}/${infer TR}`
     ? PathParamToObject<TR, K | PARAM>
-    : Record<K | P, string>
-  : K extends never
-    ? never
-    : Record<K, string>
+    : { [Key in K | P]?: string }
+  : never
 
 export type ParamKeysFromKey<K extends HttpMethodPath> = EmptyObjectIsNever<
   PathParamToObject<K>
