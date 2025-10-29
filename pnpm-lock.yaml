@@ -139,6 +139,22 @@ importers:
         specifier: ^0.15.9
         version: 0.15.9(typescript@5.9.3)
 
+  packages/mock-dash-rewrite:
+    dependencies:
+      '@hono/zod-validator':
+        specifier: ^0.7.4
+        version: 0.7.4(hono@4.10.2)(zod@4.1.12)
+      yaml:
+        specifier: ^2.8.1
+        version: 2.8.1
+      zod:
+        specifier: ^4.0.0
+        version: 4.1.12
+    devDependencies:
+      tsdown:
+        specifier: ^0.15.9
+        version: 0.15.9(typescript@5.9.3)
+
 packages:
 
   '@adobe/css-tools@4.3.3':
