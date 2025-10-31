@@ -2,35 +2,35 @@ import type z from 'zod'
 import type { DeepStrict } from '../utils/types'
 import type { HttpMethod } from './common'
 import { type BaseEndpointOptions, EndpointBase } from './endpoint-base'
-import type { EndpointInput, Input, Param } from './input'
+import type { HttpEndpointInput, HttpInput, ParamFromPath } from './http-input'
 
-export type RestConfig<
+export type HttpConfig<
   R extends z.ZodType,
-  I extends EndpointInput,
+  I extends HttpEndpointInput,
   P extends string,
-  T extends Param<P>,
+  T extends ParamFromPath<P>,
 > = {
   input?: I & {
-    param?: DeepStrict<Param<P>, T>
+    param?: DeepStrict<ParamFromPath<P>, T>
   }
   response: R
-  options?: RestOptions
+  options?: HttpOptions
 }
 
-type RestOptions = BaseEndpointOptions
+type HttpOptions = BaseEndpointOptions
 
 export function isRestEndpoint(
   value: unknown,
-): value is RestEndpoint<z.ZodType, HttpMethod, string, Input> {
-  return value instanceof RestEndpoint
+): value is HttpEndpoint<z.ZodType, HttpMethod, string, HttpInput> {
+  return value instanceof HttpEndpoint
 }
 
-export class RestEndpoint<
+export class HttpEndpoint<
   R extends z.ZodType = z.ZodType,
   M extends HttpMethod = HttpMethod,
   P extends string = string,
-  I extends EndpointInput = Input,
-> extends EndpointBase<R, P, I, RestOptions> {
+  I extends HttpEndpointInput = HttpInput,
+> extends EndpointBase<R, P, I, HttpOptions> {
   public readonly method: M
 
   constructor(
@@ -38,7 +38,7 @@ export class RestEndpoint<
     path: P,
     response: R,
     input?: I,
-    options?: RestOptions,
+    options?: HttpOptions,
   ) {
     super(path, response, input, options)
     this.method = method

@@ -1,8 +1,8 @@
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import z from 'zod'
-import type { Input } from '../schema/input'
-import { isRestEndpoint, type RestEndpoint } from '../schema/rest-endpoint'
+import { type HttpEndpoint, isRestEndpoint } from '../schema/http-endpoint'
+import type { HttpInput } from '../schema/http-input'
 import { buildEndpointPath } from '../utils/buildEndpointPath'
 import { MockError } from '../utils/errors'
 
@@ -29,7 +29,7 @@ export function createMockServer<T extends Record<string, unknown>>(
   options.addMiddleware?.(app)
 
   function processEndpoint(
-    endpoint: RestEndpoint,
+    endpoint: HttpEndpoint,
     // mock?: IMock<HttpMethodPath, z.ZodType | ZodArray<z.ZodType>, any>,
   ) {
     const path = buildEndpointPath(endpoint.path, endpoint.options.prefix)
@@ -37,7 +37,7 @@ export function createMockServer<T extends Record<string, unknown>>(
     const inputValidators = endpoint.input
       ? Object.entries(endpoint.input).map(([target, zodType]) =>
           zValidator(
-            target as keyof Input,
+            target as keyof HttpInput,
             zodType instanceof z.ZodType ? zodType : z.object(zodType),
           ),
         )

@@ -24,3 +24,13 @@ export type RemoveNever<T> = {
 }
 
 export type EmptyObjectIsNever<T> = keyof T extends never ? never : T
+
+export type Combine<T, K extends keyof T = keyof T> = {
+  [P in K]: (T extends unknown ? (x: T[P]) => void : never) extends (
+    x: infer I,
+  ) => void
+    ? I
+    : never
+} extends infer O
+  ? { [K in keyof O as O[K] extends never ? never : K]: O[K] }
+  : never

@@ -28,7 +28,7 @@ type PathParamToObject<
     : { [Key in K | P]: V }
   : never
 
-export type Param<P extends string> = Partial<
+export type ParamFromPath<P extends string> = Partial<
   PathParamToObject<OptionalStringValues, P>
 >
 
@@ -40,7 +40,7 @@ type EndpointInputSlim = {
   query?: Query
 }
 
-export type EndpointInput<METHOD extends HttpMethod = HttpMethod> =
+export type HttpEndpointInput<METHOD extends HttpMethod = HttpMethod> =
   METHOD extends 'get' | 'delete'
     ? EndpointInputSlim
     : EndpointInputSlim & {
@@ -48,13 +48,13 @@ export type EndpointInput<METHOD extends HttpMethod = HttpMethod> =
         form?: Form
       }
 
-export type Input = {
+export type HttpInput = {
   query?: Query
   json?: Json
   form?: Form
 }
 
-export type InferInput<I extends Input = Input> = RemoveNever<{
+export type InferInput<I extends HttpInput = HttpInput> = RemoveNever<{
   query: I['query'] extends object ? z.infer<z.ZodObject<I['query']>> : never
   json: I['json'] extends z.ZodType ? z.infer<I['json']> : never
   form: I['form'] extends object ? z.infer<z.ZodObject<I['form']>> : never

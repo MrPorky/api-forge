@@ -1,4 +1,4 @@
-import type { EndpointInput, Input } from './input'
+import type { HttpEndpointInput, HttpInput } from './http-input'
 
 export type BaseEndpointOptions = {
   prefix?: string
@@ -7,7 +7,7 @@ export type BaseEndpointOptions = {
 export abstract class EndpointBase<
   R,
   P extends string = string,
-  I extends EndpointInput = Input,
+  I extends HttpEndpointInput = HttpInput,
   O extends BaseEndpointOptions = BaseEndpointOptions,
 > {
   public readonly path: P
